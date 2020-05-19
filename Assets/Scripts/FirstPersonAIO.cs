@@ -84,9 +84,9 @@ public class FirstPersonAIO : MonoBehaviour {
 
     public bool autoCrosshair = false;
     public bool drawStaminaMeter = true;
-    float smoothRef;
-    Image StaminaMeter;
-    Image StaminaMeterBG;
+    public float smoothRef;
+    public Image StaminaMeter;
+    public Image StaminaMeterBG;
     public Sprite Crosshair;
     public Vector3 targetAngles;
     private Vector3 followAngles;

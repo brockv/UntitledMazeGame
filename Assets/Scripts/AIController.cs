@@ -14,9 +14,11 @@ public class AIController : MonoBehaviour
 
     private void Start()
     {
+        // Grab both the time controller and player from the scene
         timeController = FindObjectOfType(typeof(TimeController)) as TimeController;
         player = GameObject.FindGameObjectWithTag("Player");
 
+        // Disable rotation -- the ThirdPersonCharacter script will handle it
         agent.updateRotation = false;
     }
     void Update()

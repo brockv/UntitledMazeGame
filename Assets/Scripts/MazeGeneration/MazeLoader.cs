@@ -3,6 +3,8 @@ using UnityEngine.AI;
 using System.Collections;
 using System;
 using UnityEngine.UI;
+using System.Net;
+using System.Reflection.Emit;
 
 public class MazeLoader : MonoBehaviour {
 
@@ -16,57 +18,22 @@ public class MazeLoader : MonoBehaviour {
 	[SerializeField] private FirstPersonAIO player;
 	[SerializeField] private NavMeshSurface surface;
 	[SerializeField] private GameObject agent;
-
-/*	[SerializeField] private Text timeLabel;
-	private DateTime startTime;
-	public int timeLimit;
-	private int reduceLimitBy;*/
+	[SerializeField] private TimeController timeController;
 
 	private bool mazeChanged = false;
-
-	/*	private const int sectionOneStartRow = 0;
-		private const int sectionOneStopRow = 6;
-		private const int sectionOneStartCol = 0;
-		private const int sectionOneStopCol = 9;
-
-		private const int sectionTwoStartRow = 0;
-		private const int sectionTwoStopRow = 6;
-		private const int sectionTwoStartCol = 9;
-		private const int sectionTwoStopCol = 18;
-
-		private const int sectionThreeStartRow = 6;
-		private const int sectionThreeStopRow = 12;
-		private const int sectionThreeStartCol = 0;
-		private const int sectionThreeStopCol = 9;
-
-		private const int sectionFourStartRow = 6;
-		private const int sectionFourStopRow = 12;
-		private const int sectionFourStartCol = 9;
-		private const int sectionFourStopCol = 18;*/
+	private string tag = "SECTION ONE";
 
 	public MazeCell[,] mazeCells;
-
-	private TimeController timeController;
 
 	// Use this for initialization
 	void Start()
 	{
-		timeController = FindObjectOfType(typeof(TimeController)) as TimeController;
-
-		/*// Initialize the timer
-		timeLimit = 80;
-		reduceLimitBy = 5;
-		startTime = DateTime.Now;*/
-
 		// Initialize the maze by building the cells
 		InitializeMaze();		
 
 		// Carve a path out of the cells to create a maze
 		MazeAlgorithm ma = new HuntAndKillMazeAlgorithm(mazeCells);
 		ma.CreateMaze();
-
-		// Spawn some AI
-		//SpawnAI();
 
 		// Update the nav mesh
 		mazeChanged = true;
@@ -81,20 +48,41 @@ public class MazeLoader : MonoBehaviour {
 	private void BuildNewMazeSection()
 	{
 		timeController.mazeCells = mazeCells;
-		// Randomly choose a section of the maze to change
+
+		// Randomly choose a section of the maze that the player ISN'T in to change
 		int section = UnityEngine.Random.Range(1, 5);
 		switch (section)
 		{
 			case 1:
+				if (tag == "SECTION ONE")
+				{
+					BuildNewMazeSection();
+					break;
+				}
 				GenerateMazeSection(0, 0, 6, 9, "SectionOne");
 				break;
 			case 2:
+				if (tag == "SECTION TWO")
+				{
+					BuildNewMazeSection();
+					break;
+				}
 				GenerateMazeSection(0, 9, 6, 18, "SectionTwo");
 				break;
 			case 3:
+				if (tag == "SECTION THREE")
+				{
+					BuildNewMazeSection();
+					break;
+				}
 				GenerateMazeSection(6, 0, 12, 9, "SectionThree");
 				break;
 			case 4:
+				if (tag == "SECTION FOUR")
+				{
+					BuildNewMazeSection();
+					break;
+				}
 				GenerateMazeSection(6, 9, 12, 18, "SectionFour");
 				break;
 		}
@@ -110,20 +98,8 @@ public class MazeLoader : MonoBehaviour {
 	// Update is called once per frame
 	void Update ()
 	{
-		/*// Reduce the remaining time
-		int timeUsed = (int)(DateTime.Now - startTime).TotalSeconds;
-		int timeLeft = timeLimit - timeUsed;
-
-		// If there is still time remaining, display the updated value
-		if (timeLeft > 0)
-		{
-			timeLabel.text = timeLeft.ToString();
-		}
-		// Time has run out
-		else
-		{
-			timeLabel.text = "FIND THE EXIT";
-		}*/
+		// Figure out what section of the maze the player is currently in
+		GetPlayerSection();
 
 		// If the maze has changed, rebuild the nav mesh
 		if (mazeChanged)
@@ -185,7 +161,7 @@ public class MazeLoader : MonoBehaviour {
 				// South walls
 				mazeCells[r, c].southWall = Instantiate(wall, new Vector3((r*size) + (size/2f), 0, c*size), Quaternion.identity) as GameObject;
 				mazeCells[r, c].southWall.name = "South Wall " + r + "," + c;
-				mazeCells[r, c].southWall.transform.Rotate(Vector3.up * 90f);
+				mazeCells[r, c].southWall.transform.Rotate(Vector3.down * 90f);
 				mazeCells[r, c].southWall.tag = tag;
 				//mazeCells[r, c].southWall.layer = 8;				
 			}
@@ -297,6 +273,35 @@ public class MazeLoader : MonoBehaviour {
 		}
 
 		return tag;
+	}
+
+	/**
+	 * Determines what section of the maze the player is currently in by checking their row and column position.
+	 */
+	private void GetPlayerSection()
+	{
+		int row = Mathf.Clamp((int)player.transform.position.x / 5, 0, mazeRows);
+		int col = Mathf.Clamp((int)player.transform.position.z / 5, 0, mazeColumns);
+		if (row < 6 && col < 9)
+		{
+			tag = "SECTION ONE";
+			//Debug.Log("SECTION ONE -- " + "ROW: " + row + ", COL: " + col);
+		}
+		else if (row < 6 && col >= 9)
+		{
+			tag = "SECTION TWO";
+			//Debug.Log("SECTION TWO -- " + "ROW: " + row + ", COL: " + col);
+		}
+		else if (row >= 6 && col < 9)
+		{
+			tag = "SECTION THREE";
+			//Debug.Log("SECTION THREE -- " + "ROW: " + row + ", COL: " + col);
+		}
+		else if (row >= 6 && col >= 9)
+		{
+			tag = "SECTION FOUR";
+			//Debug.Log("SECTION FOUR -- " + "ROW: " + row + ", COL: " + col);
+		}
 	}
 
 	private void SpawnAI()

@@ -10,14 +10,14 @@ using UnityEngine.UI;
 public class FrameData
 {
     public Vector3 position;
-    public Vector3 rotation;
-    public Vector3 facing;
+    public Quaternion rotation;
+    public Quaternion cameraFacing;
 
-    public FrameData(Vector3 position, Vector3 rotation, Vector3 facing)
+    public FrameData(Vector3 position, Quaternion rotation, Quaternion cameraFacing)
     {
         this.position = position;
         this.rotation = rotation;
-        this.facing = facing;
+        this.cameraFacing = cameraFacing;
     }
 }
 
@@ -32,30 +32,37 @@ public class TimeController : MonoBehaviour
 
     private int timeLimit;
     private int timeLeft;
-    private float timeUsed;
-    private float rewindTime;
+    private float timeUsed;    
 
     private Vector3 playerCurrentPosition;
-    private Vector3 playerPreviousPosition;
-    private Vector3 playerCurrentRotation;
-    private Vector3 playerPreviousRotation;
-    private Vector3 playerCurrentFacing;
-    private Vector3 playerPreviousFacing;
+    private Vector3 playerPreviousPosition;    
+    private Quaternion playerCurrentRotation;
+    private Quaternion playerPreviousRotation;
+    private Quaternion playerCurrentFacing;
+    private Quaternion playerPreviousFacing;
+    private float playerCurrentStamina;
+    private float playerPreviousStamina;
 
     private Vector3 agentCurrentPosition;
-    private Vector3 agentPreviousPosition;
-    private Vector3 agentCurrentRotation;
-    private Vector3 agentPreviousRotation;
+    private Vector3 agentPreviousPosition;    
+    private Quaternion agentCurrentRotation;
+    private Quaternion agentPreviousRotation;
 
     private ArrayList playerKeyFrames;
     private ArrayList agentKeyFrames;
+    private ArrayList playerStamina;
 
     public bool isReversing = false;
-    private bool firstRun = true;
+    private bool firstCycle = true;
 
     public int keyFrame = 5;
     private int frameCounter = 0;
-    private int reverseCounter = 0;
+    private int rewindCounter = 0;
+    private float allowedRecordTime = 10f;
+    public float rewindTime;
+
+    private LensDistortion lensDistortionLayer = null;
+    private ChromaticAberration chromaticAberrationLayer = null;
 
     [SerializeField] private MazeLoader mazeLoader;
     public MazeCell[,] mazeCells;
@@ -65,51 +72,99 @@ public class TimeController : MonoBehaviour
         // Create arrays to hold the player and agent data
         playerKeyFrames = new ArrayList();
         agentKeyFrames = new ArrayList();
+        playerStamina = new ArrayList();
 
-        // Initialize the timer
+        // Initialize timer variables
         timeLimit = 80;
         timeUsed = 0;
+        rewindTime = 0;
 
-        rewindTime = 10;
-        timeUsed = 0;
-
+        // Initialize the array we'll store the maze data in
         mazeCells = new MazeCell[12, 18];
-        
+
+        // Grab the post-processing information from the camera
+        PostProcessVolume volume = camera.GetComponent<PostProcessVolume>();
+        volume.profile.TryGetSettings(out lensDistortionLayer);
+        volume.profile.TryGetSettings(out chromaticAberrationLayer);
     }
 
     void Update()
-    {        
+    {
         // Rewind time if the left mouse button is being pressed
-        if (Input.GetMouseButton(0))
+        if (rewindTime > 1.0f)
         {
-            isReversing = true;
-        }
+            if (Input.GetKeyDown(KeyCode.R))
+            {
+                // Set the reversing flag and the camera effects
+                isReversing = true;
+                lensDistortionLayer.intensity.value = -70.0f;
+                chromaticAberrationLayer.enabled.value = true;
+            }
+        }        
         else
         {
+            // Set the reversing flag and disable the camera effects
             isReversing = false;
-            firstRun = true;            
+            chromaticAberrationLayer.enabled.value = false;
         }
 
+        // Update the timers
+        UpdateTimers();        
+    }
+
+    void FixedUpdate()
+    {
+        // Is time rewinding?
+        if (isReversing)
+        {            
+            RewindTime();            
+        }
+        // Time isn't rewinding
+        else
+        {
+            // Reduce the lens distortion and record the player and agent's positions
+            lensDistortionLayer.intensity.value = Mathf.Lerp(lensDistortionLayer.intensity.value, 0.0f, 0.1f);
+            RecordPosition();
+        }        
+    }
+
+    /**
+     * Updates both the exit and rewind timers.
+     */
+    private void UpdateTimers()
+    {
         // Control the timer based on whether the player is reversing time
         if (isReversing)
         {
-            // Increase the remaining time by subtracting from the time used
-            timeUsed -= Time.deltaTime;
-            timeLeft = (timeLimit - (int)timeUsed);
+            // Only rewind the escape timer if it hasn't already reached zero
+            if (timeLeft > 0)
+            {
+                // Increase the remaining time by subtracting from the time used
+                timeUsed = Mathf.Clamp(timeUsed - Time.deltaTime, 0, 80);
+                timeLeft = Mathf.Clamp((timeLimit - (int)timeUsed), 0, 80);
 
-            // Update the timer label
-            timeLabel.text = timeLeft.ToString();
+                // Update the timer label
+                timeLabel.text = timeLeft.ToString();
+            }            
 
             // Decrement the player's rewind time and update the label
-            rewindTime -= Time.deltaTime;
-            int time = (int)rewindTime;
-            rewindTimeLabel.text = time.ToString();
+            rewindTime = Mathf.Clamp((rewindTime - Time.deltaTime), 0, 10);
+            rewindTimeLabel.text = ((int)rewindTime).ToString();
+
+            // Refill the player's stamina
+            if (player.staminaInternal == player.staminaLevel)
+            {
+                player.StaminaMeterBG.color = Vector4.MoveTowards(player.StaminaMeterBG.color, new Vector4(0, 0, 0, 0), 0.15f);
+                player.StaminaMeter.color = Vector4.MoveTowards(player.StaminaMeter.color, new Vector4(1, 1, 1, 0), 0.15f);
+            }
+            float x = Mathf.Clamp(Mathf.SmoothDamp(player.StaminaMeter.transform.localScale.x, (player.staminaInternal / player.staminaLevel) * player.StaminaMeterBG.transform.localScale.x, ref player.smoothRef, (1) * Time.deltaTime, 1), 0.001f, player.StaminaMeterBG.transform.localScale.x);
+            player.StaminaMeter.transform.localScale = new Vector3(x, 1, 1);
         }
         else
         {
             // Reduce the remaining time by increasing the time used
-            timeUsed += Time.deltaTime;
-            timeLeft = (timeLimit - (int)timeUsed);
+            timeUsed = Mathf.Clamp(timeUsed + Time.deltaTime, 0, 80);
+            timeLeft = Mathf.Clamp((timeLimit - (int)timeUsed), 0, 80);
 
             // If there is still time remaining, display the updated value
             if (timeLeft > 0)
@@ -122,90 +177,91 @@ public class TimeController : MonoBehaviour
                 timeLabel.text = "FIND THE EXIT";
             }
 
-            // Increment the player's rewind time and update the label
             rewindTime = Mathf.Clamp((rewindTime + Time.deltaTime), 0, 10);
-            int time = (int)rewindTime;
-            rewindTimeLabel.text = time.ToString();
+            rewindTimeLabel.text = ((int)rewindTime).ToString();
         }
-        Debug.Log(rewindTime);
     }
 
-    void FixedUpdate()
+    /**
+     * Records both the player's and agent's positions, and trims their respective arrays when they grow too large.
+     */
+    private void RecordPosition()
     {
-        // Is time rewinding?
-        if (!isReversing)
-        {
-            // If we're not at the 5th frame yet, increment the frame counter
-            if (frameCounter < keyFrame)
-            {
-                frameCounter += 1;
-            }
-            // Otherwise, reset the frame counter and record the player's and agent's positions and rotations
-            else
-            {
-                frameCounter = 0;
-                playerKeyFrames.Add(new FrameData(player.transform.position, player.transform.localEulerAngles, camera.transform.localEulerAngles));
-                agentKeyFrames.Add(new FrameData(agent.transform.position, agent.transform.localEulerAngles, agent.transform.localEulerAngles));
-            }
-        }
-        // Time is rewinding -- move the player and agent backwards
-        else
-        {
-            if (reverseCounter > 0)
-            {
-                reverseCounter -= 1;
-            }
-            else
-            {
-                reverseCounter = keyFrame;
-                RestorePositions();
-            }
+        if (Input.GetMouseButton(0)) return;
 
-            if (firstRun)
-            {
-                firstRun = false;
-                RestorePositions();
-            }
+        // If the arrays have more than 10 seconds worth of information in them, remove the oldest recorded position
 
-            // Interpolate the player's and agent's positions and rotations back to previous positions
-            float interpolation = (float)reverseCounter / (float)keyFrame;
-            player.transform.position = Vector3.Lerp(playerPreviousPosition, playerCurrentPosition, interpolation);
-            player.transform.localEulerAngles = Vector3.Lerp(playerPreviousRotation, playerCurrentRotation, interpolation);
-            camera.transform.localEulerAngles = Vector3.Lerp(playerPreviousFacing, playerCurrentFacing, interpolation);
-
-            agent.transform.position = Vector3.Lerp(agentPreviousPosition, agentCurrentPosition, interpolation);
-            agent.transform.localEulerAngles = Vector3.Lerp(agentPreviousRotation, agentCurrentRotation, interpolation);
-
-/*            for (int r = 0; r < 12; r++)
-            {
-                for (int c = 0; c < 18; c++)
-                {
-                    if (mazeLoader.mazeCells[r, c] != mazeCells[r, c])
-                    {
-                        mazeLoader.mazeCells[r, c] = mazeCells[r, c];
-                    }
-                }
-            }*/
-/*            if (mazeCells != mazeLoader.mazeCells)
-            {
-                mazeLoader.mazeCells = mazeCells;
-            }*/
-        }
-
-        // Once the array has grown to a certain size, start removing the first recorded position
-        if (playerKeyFrames.Count > 64)
+        // Player's recorded positions
+        if (playerKeyFrames.Count > (allowedRecordTime / Time.fixedDeltaTime))
         {
             playerKeyFrames.RemoveAt(0);
         }
 
-        if (agentKeyFrames.Count > 64)
+        // Agent's recorded positions
+        if (agentKeyFrames.Count > (allowedRecordTime / Time.fixedDeltaTime))
         {
             agentKeyFrames.RemoveAt(0);
         }
+
+        // If we're not at the 5th frame yet, increment the frame counter
+        if (frameCounter < keyFrame)
+        {
+            frameCounter += 1;
+        }
+        // Otherwise, reset the frame counter and record the player's and agent's positions and rotations
+        else
+        {
+            frameCounter = 0;
+            playerKeyFrames.Add(new FrameData(player.transform.position, player.transform.rotation, camera.transform.rotation));
+            agentKeyFrames.Add(new FrameData(agent.transform.position, agent.transform.rotation, agent.transform.rotation));
+
+            playerStamina.Add(player.staminaInternal);
+        }
     }
 
+    /**
+     * Rewinds time, moving both the player and agent(s) to previously recorded positions.
+     */
+    private void RewindTime()
+    {
+        // Decrease the counter that controls the position restoration 
+        if (rewindCounter > 0)
+        {
+            rewindCounter -= 1;
+        }
+        // Restore the player and agent's positions at every frame interval
+        else
+        {
+            rewindCounter = keyFrame;
+            RestorePositions();
+        }
+
+        // If this is the first cycle of the rewind, restore the player and agent's positions
+        if (firstCycle)
+        {
+            firstCycle = false;
+            RestorePositions();
+        }
+
+        // Interpolate the player's position, rotation, camera facing, and stamina back to previous positions
+        float interpolation = (float)rewindCounter / (float)keyFrame;
+        player.transform.position = Vector3.Lerp(playerPreviousPosition, playerCurrentPosition, interpolation);
+        player.transform.rotation = Quaternion.Lerp(playerPreviousRotation, playerCurrentRotation, interpolation);
+        camera.transform.rotation = Quaternion.Lerp(playerPreviousFacing, playerCurrentFacing, interpolation);
+        player.staminaInternal = Mathf.Lerp(playerPreviousStamina, playerCurrentStamina, interpolation);
+
+        // Interpolate the agent's position and rotation back to previous positions
+        agent.transform.position = Vector3.Lerp(agentPreviousPosition, agentCurrentPosition, interpolation);
+        agent.transform.rotation = Quaternion.Lerp(agentPreviousRotation, agentCurrentRotation, interpolation);
+    }
+
+    /**
+     * Grabs the player's and agent's current and last recorded positions in order to interpolate between them.
+     */
     void RestorePositions()
     {
+        if (playerKeyFrames.Count <= 0) return;
+
         int playerLastIndex = playerKeyFrames.Count - 1;
         int playerSecondToLastIndex = playerKeyFrames.Count - 2;
 
@@ -215,14 +271,21 @@ public class TimeController : MonoBehaviour
         // Get the player's current and previous position and location
         if (playerSecondToLastIndex >= 0)
         {
+            // Position
             playerCurrentPosition = (playerKeyFrames[playerLastIndex] as FrameData).position;
             playerPreviousPosition = (playerKeyFrames[playerSecondToLastIndex] as FrameData).position;
 
+            // Rotation
             playerCurrentRotation = (playerKeyFrames[playerLastIndex] as FrameData).rotation;
             playerPreviousRotation = (playerKeyFrames[playerSecondToLastIndex] as FrameData).rotation;
 
-            playerCurrentFacing = (playerKeyFrames[playerLastIndex] as FrameData).facing;
-            playerPreviousFacing = (playerKeyFrames[playerSecondToLastIndex] as FrameData).facing;
+            // Camera facing
+            playerCurrentFacing = (playerKeyFrames[playerLastIndex] as FrameData).cameraFacing;
+            playerPreviousFacing = (playerKeyFrames[playerSecondToLastIndex] as FrameData).cameraFacing;
+
+            // Stamina
+            playerCurrentStamina = (float)playerStamina[playerLastIndex];
+            playerPreviousStamina = (float)playerStamina[playerSecondToLastIndex];
 
             playerKeyFrames.RemoveAt(playerLastIndex);
         }
@@ -238,8 +301,5 @@ public class TimeController : MonoBehaviour
 
             agentKeyFrames.RemoveAt(agentLastIndex);
         }
-
-        //timeLeft = Mathf.Clamp(timeLeft + 1, 0, timeLimit);
-        //timeRestored++;
     }
 }
