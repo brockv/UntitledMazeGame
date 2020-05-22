@@ -9,6 +9,12 @@ TagManager:
   - SectionTwo
   - SectionThree
   - SectionFour
+  - BackupSectionOne
+  - BackupSectionTwo
+  - BackupSectionThree
+  - BackupSectionFour
+  - BackupSectionALL
+  - SAFE
   layers:
   - Default
   - TransparentFX

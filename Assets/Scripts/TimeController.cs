@@ -7,31 +7,87 @@ using UnityEngine.AI;
 using UnityEngine.Rendering.PostProcessing;
 using UnityEngine.UI;
 
+public class WaitFor
+{
+    public static IEnumerator Frames(int frameCount)
+    {
+        while (frameCount > 0)
+        {
+            frameCount--;
+            yield return null;
+        }
+    }
+}
+
 public class FrameData
 {
     public Vector3 position;
     public Quaternion rotation;
     public Quaternion cameraFacing;
 
-    public FrameData(Vector3 position, Quaternion rotation, Quaternion cameraFacing)
+    public FrameData(Vector3 _position, Quaternion _rotation, Quaternion _cameraFacing)
     {
-        this.position = position;
-        this.rotation = rotation;
-        this.cameraFacing = cameraFacing;
+        this.position = _position;
+        this.rotation = _rotation;
+        this.cameraFacing = _cameraFacing;
     }
 }
 
+public class MazeData
+{
+    public int startRow;
+    public int startCol;
+    public int stopRow;
+    public int stopCol;
+    public string sectionTag;
+
+    public float depth;
+
+    public MazeCell[,] layout;
+
+    public MazeData(int _startRow, int _startCol, int _stopRow, int _stopCol, string _sectionTag, float _depth, MazeCell[,] _layout)
+    {
+        this.startRow = _startRow;
+        this.startCol = _startCol;
+        this.stopRow = _stopRow;
+        this.stopCol = _stopCol;
+        this.sectionTag = _sectionTag;
+
+        this.depth = _depth;
+
+        this.layout = _layout;
+    }
+}
+
+public class LayoutData
+{
+    public float depth;
+    public MazeCell[,] layout;
+
+    public LayoutData(float _depth, MazeCell[,] _layout)
+    {        
+        this.depth = _depth;
+        this.layout = _layout;
+    }
+}
 
 public class TimeController : MonoBehaviour
 {
+    #region Editor
+    
     [SerializeField] private FirstPersonAIO player;
     [SerializeField] private NavMeshAgent agent;
     [SerializeField] private Camera camera;
     [SerializeField] private Text timeLabel;
     [SerializeField] private Text rewindTimeLabel;
+    [SerializeField] private MazeLoader mazeLoader;
+
+    #endregion
+
+    #region Variables
 
     private int timeLimit;
-    private int timeLeft;
+    public int timeLeft;
     private float timeUsed;    
 
     private Vector3 playerCurrentPosition;
@@ -63,9 +119,13 @@ public class TimeController : MonoBehaviour
 
     private LensDistortion lensDistortionLayer = null;
     private ChromaticAberration chromaticAberrationLayer = null;
+    private ColorGrading colorGradingLayer = null;
+    
+    //public MazeCell[,] mazeCells;
+    public ArrayList mazeList;
+    public List<MazeCell[,]> layoutList;
 
-    [SerializeField] private MazeLoader mazeLoader;
-    public MazeCell[,] mazeCells;
+    #endregion
 
     void Start()
     {
@@ -74,18 +134,21 @@ public class TimeController : MonoBehaviour
         agentKeyFrames = new ArrayList();
         playerStamina = new ArrayList();
 
+        // Create arrays to hold the maze data
+        mazeList = new ArrayList();
+        //mazeCells = new MazeCell[mazeLoader.mazeRows, mazeLoader.mazeColumns];
+        layoutList = new List<MazeCell[,]>();
+
         // Initialize timer variables
         timeLimit = 80;
         timeUsed = 0;
-        rewindTime = 0;
-
-        // Initialize the array we'll store the maze data in
-        mazeCells = new MazeCell[12, 18];
+        rewindTime = 0;        
 
         // Grab the post-processing information from the camera
         PostProcessVolume volume = camera.GetComponent<PostProcessVolume>();
         volume.profile.TryGetSettings(out lensDistortionLayer);
         volume.profile.TryGetSettings(out chromaticAberrationLayer);
+        volume.profile.TryGetSettings(out colorGradingLayer);
     }
 
     void Update()
@@ -99,6 +162,7 @@ public class TimeController : MonoBehaviour
                 isReversing = true;
                 lensDistortionLayer.intensity.value = -70.0f;
                 chromaticAberrationLayer.enabled.value = true;
+                colorGradingLayer.enabled.value = true;
             }
         }        
         else
@@ -106,6 +170,7 @@ public class TimeController : MonoBehaviour
             // Set the reversing flag and disable the camera effects
             isReversing = false;
             chromaticAberrationLayer.enabled.value = false;
+            colorGradingLayer.enabled.value = false;
         }
 
         // Update the timers
@@ -187,9 +252,7 @@ public class TimeController : MonoBehaviour
      */
     private void RecordPosition()
     {
-        if (Input.GetMouseButton(0)) return;
-
-        // If the arrays have more than 10 seconds worth of information in them, remove the oldest recorded position
+        // If the arrays have more than 10 seconds worth of information in them, remove the oldest recorded data
 
         // Player's recorded positions
         if (playerKeyFrames.Count > (allowedRecordTime / Time.fixedDeltaTime))
@@ -203,6 +266,12 @@ public class TimeController : MonoBehaviour
             agentKeyFrames.RemoveAt(0);
         }
 
+        // Recorded maze layouts
+        if (mazeList.Count > 3)
+        {
+            mazeList.RemoveAt(0);
+        }
+
         // If we're not at the 5th frame yet, increment the frame counter
         if (frameCounter < keyFrame)
         {
@@ -212,10 +281,13 @@ public class TimeController : MonoBehaviour
         else
         {
             frameCounter = 0;
-            playerKeyFrames.Add(new FrameData(player.transform.position, player.transform.rotation, camera.transform.rotation));
-            agentKeyFrames.Add(new FrameData(agent.transform.position, agent.transform.rotation, agent.transform.rotation));
 
+            // Player
+            playerKeyFrames.Add(new FrameData(player.transform.position, player.transform.rotation, camera.transform.rotation));
             playerStamina.Add(player.staminaInternal);
+
+            // Agent
+            agentKeyFrames.Add(new FrameData(agent.transform.position, agent.transform.rotation, agent.transform.rotation));
         }
     }
 
@@ -253,6 +325,32 @@ public class TimeController : MonoBehaviour
         // Interpolate the agent's position and rotation back to previous positions
         agent.transform.position = Vector3.Lerp(agentPreviousPosition, agentCurrentPosition, interpolation);
         agent.transform.rotation = Quaternion.Lerp(agentPreviousRotation, agentCurrentRotation, interpolation);
+
+        if (mazeList.Count > 0 && timeLeft % 5 == 0.0f)
+        {
+            DeleteCurrentLayout();
+            CreateLayoutFromCopy();
+            //MoveWallsUp();
+            //TagWalls();
+
+            //StartCoroutine(TestFunction());
+            
+            // Update the nav mesh
+            mazeLoader.mazeChanged = true;
+
+            // Remove the layout we just swapped in
+            //mazeList.RemoveAt(mazeList.Count - 1);
+        }        
+    }
+
+    public IEnumerator TestFunction()
+    {
+        yield return WaitFor.Frames(30);
+        //MoveWallsUp();
+        //TagWalls();
+        //CreateMazeFromCopy();
+
+        StopCoroutine(TestFunction());
     }
 
     /**
@@ -266,11 +364,11 @@ public class TimeController : MonoBehaviour
         int playerSecondToLastIndex = playerKeyFrames.Count - 2;
 
         int agentLastIndex = agentKeyFrames.Count - 1;
-        int agentSecondToLastIndex = agentKeyFrames.Count - 2;
+        int agentSecondToLastIndex = agentKeyFrames.Count - 2;                
 
         // Get the player's current and previous position and location
         if (playerSecondToLastIndex >= 0)
-        {
+        {            
             // Position
             playerCurrentPosition = (playerKeyFrames[playerLastIndex] as FrameData).position;
             playerPreviousPosition = (playerKeyFrames[playerSecondToLastIndex] as FrameData).position;
@@ -287,7 +385,7 @@ public class TimeController : MonoBehaviour
             playerCurrentStamina = (float)playerStamina[playerLastIndex];
             playerPreviousStamina = (float)playerStamina[playerSecondToLastIndex];
 
-            playerKeyFrames.RemoveAt(playerLastIndex);
+            playerKeyFrames.RemoveAt(playerLastIndex);                   
         }
 
         // Get the agent's current and previous position and location
@@ -301,5 +399,143 @@ public class TimeController : MonoBehaviour
 
             agentKeyFrames.RemoveAt(agentLastIndex);
         }
+    }
+    
+    private void DeleteCurrentLayout()
+    {
+        foreach (GameObject go in Resources.FindObjectsOfTypeAll(typeof(GameObject)) as GameObject[])
+        {
+            if (go.CompareTag("SectionOne") || go.CompareTag("SectionTwo") || go.CompareTag("SectionThree") || go.CompareTag("SectionFour"))
+            {
+                if (go.transform.position.y == 0.0f)
+                {
+                    Destroy(go);
+                }
+            }
+        }
+
+        //CreateMazeFromCopy();
+    }
+
+    public void CreateLayoutFromCopy()
+    {
+        LayoutData _ = mazeList[mazeList.Count - 1] as LayoutData;
+        MazeCell[,] temp = _.layout;
+
+        MazeCell[,] mazeCells = mazeLoader.mazeCells;
+        GameObject wall = mazeLoader.wall;
+        float size = mazeLoader.size;
+
+        // Iterate over the current maze in order to make a copy of it
+        for (int r = 0; r < mazeLoader.mazeRows; r++)
+        {
+            for (int c = 0; c < mazeLoader.mazeColumns; c++)
+            {
+                // Initialize the current cell and determine which section it is in (so we can tag it appropriately)
+                mazeCells[r, c] = new MazeCell();
+                string sectionTag = GetSectionTag(r, c);
+
+                // If there's a north wall in this cell, create one in the copy
+                if (temp[r, c].northWall != null)
+                {
+                    mazeLoader.mazeCells[r, c].northWall = Instantiate(wall, new Vector3((r * size) - (size / 2f), 0, c * size), Quaternion.identity) as GameObject;
+                    mazeLoader.mazeCells[r, c].northWall.name = "North Wall " + r + "," + c;
+                    mazeLoader.mazeCells[r, c].northWall.transform.Rotate(Vector3.up * 90f);
+                    mazeLoader.mazeCells[r, c].northWall.tag = sectionTag;
+                }
+
+                // If there's a south wall in this cell, create one in the copy
+                if (temp[r, c].southWall != null)
+                {
+                    mazeLoader.mazeCells[r, c].southWall = Instantiate(wall, new Vector3((r * size) + (size / 2f), 0, c * size), Quaternion.identity) as GameObject;
+                    mazeLoader.mazeCells[r, c].southWall.name = "South Wall " + r + "," + c;
+                    mazeLoader.mazeCells[r, c].southWall.transform.Rotate(Vector3.up * 90f);
+                    mazeLoader.mazeCells[r, c].southWall.tag = sectionTag;
+                }
+
+                // If there's a east wall in this cell, create one in the copy
+                if (temp[r, c].eastWall != null)
+                {
+                    mazeLoader.mazeCells[r, c].eastWall = Instantiate(wall, new Vector3(r * size, 0, (c * size) + (size / 2f)), Quaternion.identity) as GameObject;
+                    mazeLoader.mazeCells[r, c].eastWall.name = "East Wall " + r + "," + c;
+                    mazeLoader.mazeCells[r, c].eastWall.tag = sectionTag;
+                }
+
+                // If there's a west wall in this cell, create one in the copy
+                if (temp[r, c].westWall != null)
+                {
+                    mazeLoader.mazeCells[r, c].westWall = Instantiate(wall, new Vector3(r * size, 0, (c * size) - (size / 2f)), Quaternion.identity) as GameObject;
+                    mazeLoader.mazeCells[r, c].westWall.name = "West Wall " + r + "," + c;
+                    mazeLoader.mazeCells[r, c].westWall.tag = sectionTag;
+                }
+            }
+        }
+    }
+
+    private void MoveWallsUp()
+    {
+        LayoutData _ = mazeList[mazeList.Count - 1] as LayoutData;
+        MazeCell[,] temp = _.layout;
+        for (int r = 0; r < mazeLoader.mazeRows; r++)
+        {
+            for (int c = 0; c < mazeLoader.mazeColumns; c++)
+            {
+                string sectionTag = GetSectionTag(r, c);
+                GameObject northWall = temp[r, c].northWall;
+                GameObject southWall = temp[r, c].southWall;
+                GameObject eastWall = temp[r, c].eastWall;
+                GameObject westWall = temp[r, c].westWall;
+
+                if (northWall != null)
+                {
+                    northWall.transform.position = new Vector3(northWall.transform.position.x, 0, northWall.transform.position.z);
+                    //northWall.tag = sectionTag;
+                }
+
+                if (southWall != null)
+                {
+                    southWall.transform.position = new Vector3(southWall.transform.position.x, 0, southWall.transform.position.z);
+                    //southWall.tag = sectionTag;
+                }
+
+                if (eastWall != null)
+                {
+                    eastWall.transform.position = new Vector3(eastWall.transform.position.x, 0, eastWall.transform.position.z);
+                    //eastWall.tag = sectionTag;
+                }
+
+                if (westWall != null)
+                {
+                    westWall.transform.position = new Vector3(westWall.transform.position.x, 0, westWall.transform.position.z);
+                    //westWall.tag = sectionTag;
+                }
+            }
+        }
+    }
+
+    /**
+	 * Returns the tag associated with the given row and column.
+	 */
+    public string GetSectionTag(int row, int col)
+    {
+        string tag = "";
+        if (row < 6 && col < 9) // Section One
+        {
+            tag = "SectionOne";
+        }
+        else if (row < 6 && col >= 9) // Section Two
+        {
+            tag = "SectionTwo";
+        }
+        else if (row >= 6 && col < 9) // Section Three
+        {
+            tag = "SectionThree";
+        }
+        else if (row >= 6 && col >= 9) // Section Four
+        {
+            tag = "SectionFour";
+        }
+
+        return tag;
     }
 }
