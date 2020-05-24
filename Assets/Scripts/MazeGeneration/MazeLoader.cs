@@ -9,7 +9,9 @@ using System.Collections.Generic;
 
 public class MazeLoader : MonoBehaviour {
 
-	[SerializeField] public int mazeRows;
+    #region Editor
+
+    [SerializeField] public int mazeRows;
 	[SerializeField] public int mazeColumns;
 	[SerializeField] public GameObject wall;
 	[SerializeField] public GameObject floor;
@@ -20,14 +22,22 @@ public class MazeLoader : MonoBehaviour {
 	[SerializeField] private NavMeshSurface surface;
 	[SerializeField] private GameObject agent;
 	[SerializeField] private TimeController timeController;
+	[SerializeField] public Text fragmentCounter;
+	[SerializeField] public Text fragmentInfo;
+	[SerializeField] public GameObject fragment;
 
-	public bool mazeChanged = false;
+    #endregion
+
+    #region Variables
+
+    public bool mazeChanged = false;
 	public bool isChanging = false;
-	private int layoutIndex = 1;
-	private string lastSectionTag = "";
+	public int layoutIndex = 1;
 	private string playerSectionTag = "SECTION ONE";
-
+	public int fragments = 0;
 	public MazeCell[,] mazeCells;
+
+	#endregion
 
 	void Start()
 	{
@@ -37,9 +47,6 @@ public class MazeLoader : MonoBehaviour {
 		// Carve a path out of the cells to create a maze
 		MazeAlgorithm ma = new HuntAndKillMazeAlgorithm(mazeCells);
 		ma.CreateMaze();
-
-		// Copy the maze layout
-		//CopyMazeLayout(0, 12, 0, 18, "BackupSectionALL");//, 1, mazeCells);
 
 		// Update the nav mesh
 		mazeChanged = true;
@@ -52,20 +59,20 @@ public class MazeLoader : MonoBehaviour {
 	 * Reset the map and build a new maze.
 	 */
 	private void BuildNewMazeSection()
-	{		
-		// Don't build new sections while time is reversing
-		if (timeController.isReversing || (timeController.timeLeft > 0 && timeController.timeLeft % 5 != 0)) return;
+	{
+		// Check if the remaining time is divisible by 5 by checking the last digit (using mod causes this to be true longer than we want for some reason, so we do it this way)
+		bool correctInterval = timeController.timeLeft.ToString().EndsWith("5") || timeController.timeLeft.ToString().EndsWith("0");
+
+		// Don't build new sections while time is reversing or the time remaining isn't divisible by 5
+		if (timeController.isReversing || !correctInterval) return;
 
 		// Copy the maze layout
-		//CopyCurrentMazeLayout(); // 0, 12, 0, 18, "BackupSectionALL");//, 1, mazeCells);
-
-		//int startRow = 0, stopRow = 0, startCol = 0, stopCol = 0, index = 1;
-		//string sectionTag = null;
+		CopyCurrentMazeLayout();
 
 		// Randomly choose a section of the maze that the player ISN'T in to change
 		int section = UnityEngine.Random.Range(1, 5);
-		section = 1;
-		playerSectionTag = "";
+		//section = 1;
+		//playerSectionTag = "";
 		switch (section)
 		{			
 			case 1:
@@ -75,7 +82,6 @@ public class MazeLoader : MonoBehaviour {
 					break;
 				}
 				GenerateMazeSection(0, 0, 6, 9, "SectionOne");
-				//startRow = 0; stopRow = 6; startCol = 0; stopCol = 9; sectionTag = "BackupSectionOne";	
 				break;
 			case 2:
 				if (playerSectionTag == "SECTION TWO")
@@ -83,8 +89,7 @@ public class MazeLoader : MonoBehaviour {
 					BuildNewMazeSection();
 					break;
 				}
-				GenerateMazeSection(0, 9, 6, 18, "SectionTwo");
-				//startRow = 0; stopRow = 6; startCol = 9; stopCol = 18; sectionTag = "BackupSectionTwo";
+				GenerateMazeSection(0, 9, 6, 18, "SectionTwo");				
 				break;
 			case 3:
 				if (playerSectionTag == "SECTION THREE")
@@ -93,7 +98,6 @@ public class MazeLoader : MonoBehaviour {
 					break;
 				}
 				GenerateMazeSection(6, 0, 12, 9, "SectionThree");
-				//startRow = 6; stopRow = 12; startCol = 0; stopCol = 9; sectionTag = "BackupSectionThree";
 				break;
 			case 4:
 				if (playerSectionTag == "SECTION FOUR")
@@ -102,15 +106,12 @@ public class MazeLoader : MonoBehaviour {
 					break;
 				}
 				GenerateMazeSection(6, 9, 12, 18, "SectionFour");
-				//startRow = 6; stopRow = 12; startCol = 9; stopCol = 18; sectionTag = "BackupSectionFour";
 				break;
 		}
 
 		// Carve a path out of the cells to create a maze
 		MazeAlgorithm ma = new HuntAndKillMazeAlgorithm(mazeCells);
 		ma.CreateMaze();
-
-		//CopyMazeLayout(startRow, stopRow, startCol, stopCol, sectionTag);//, index, layout);
 
 		// Update the nav mesh
 		mazeChanged = true;
@@ -130,6 +131,8 @@ public class MazeLoader : MonoBehaviour {
 			mazeChanged = false;
 			isChanging = false;
 		}
+
+		fragmentCounter.text = fragments.ToString();
 	}
 
 	/**
@@ -138,14 +141,14 @@ public class MazeLoader : MonoBehaviour {
 	private void InitializeMaze()
 	{
 		// Initialize a new array of MazeCells with the given dimensions
-		mazeCells = new MazeCell[mazeRows, mazeColumns];		
+		mazeCells = new MazeCell[mazeRows, mazeColumns];
 
-		// Iterate over the cells, creating the floor and walls
+		// Iterate over the cells, creating the floor, ceiling, and walls
 		for (int r = 0; r < mazeRows; r++) {
 			for (int c = 0; c < mazeColumns; c++) {
 				
 				mazeCells[r, c] = new MazeCell();
-				string tag = GetSectionTag(r, c);
+				string sectionTag = GetSectionTag(r, c);
 
 				// Floor
 				mazeCells[r, c].floor = Instantiate(floor, new Vector3(r*size, -(size/2f), c*size), Quaternion.identity) as GameObject;
@@ -156,33 +159,108 @@ public class MazeLoader : MonoBehaviour {
 				mazeCells[r, c].ceiling = Instantiate(ceiling, new Vector3(r * size, (size / 2f), c * size), Quaternion.identity) as GameObject;
 				mazeCells[r, c].ceiling.name = "Ceiling " + r + "," + c;
 				mazeCells[r, c].ceiling.transform.Rotate(Vector3.left, 90f);
-				mazeCells[r, c].ceiling.layer = 9;
+				mazeCells[r, c].ceiling.layer = 9; // We don't want the mini map camera to render the ceiling
 
 				// West walls
 				if (c == 0) {
 					mazeCells[r, c].westWall = Instantiate(wall, new Vector3(r*size, 0, (c*size) - (size/2f)), Quaternion.identity) as GameObject;
 					mazeCells[r, c].westWall.name = "West Wall " + r + "," + c;
-					mazeCells[r, c].westWall.tag = tag;
+					mazeCells[r, c].westWall.tag = sectionTag;
 				}
 
 				// East walls
 				mazeCells[r, c].eastWall = Instantiate(wall, new Vector3 (r*size, 0, (c*size) + (size/2f)), Quaternion.identity) as GameObject;
 				mazeCells[r, c].eastWall.name = "East Wall " + r + "," + c;
-				mazeCells[r, c].eastWall.tag = tag;
+				mazeCells[r, c].eastWall.tag = sectionTag;
 
 				// North walls
 				if (r == 0) {
 					mazeCells[r, c].northWall = Instantiate(wall, new Vector3((r*size) - (size/2f), 0, c*size), Quaternion.identity) as GameObject;
 					mazeCells[r, c].northWall.name = "North Wall " + r + "," + c;
 					mazeCells[r, c].northWall.transform.Rotate(Vector3.up * 90f);
-					mazeCells[r, c].northWall.tag = tag;
+					mazeCells[r, c].northWall.tag = sectionTag;
 				}
 
 				// South walls
 				mazeCells[r, c].southWall = Instantiate(wall, new Vector3((r*size) + (size/2f), 0, c*size), Quaternion.identity) as GameObject;
 				mazeCells[r, c].southWall.name = "South Wall " + r + "," + c;
 				mazeCells[r, c].southWall.transform.Rotate(Vector3.down * 90f);
-				mazeCells[r, c].southWall.tag = tag;
+				mazeCells[r, c].southWall.tag = sectionTag;
+			}
+		}
+
+		// Create and place the fragments in the maze
+		PlaceFragments();
+	}
+
+	/**
+	 * Place 4 fragments in the maze, each in a random location in one of the four sections.
+	 */
+	private void PlaceFragments()
+	{
+		// Variables for creating the fragments
+		Vector3 position;
+		GameObject go;
+
+		// Place each fragment
+		for (int i = 1; i <= 4; i++)
+		{
+			int row;
+			int col;
+			switch (i)
+			{
+				// Section One
+				case 1:
+					// Get a random cell in section one
+					row = UnityEngine.Random.Range(0, 6);
+					col = UnityEngine.Random.Range(0, 9);
+					position = mazeCells[row, col].floor.transform.position;
+
+					// Create a fragment at the given position
+					go = Instantiate(fragment, new Vector3(position.x, -0.5f, position.z), Quaternion.identity) as GameObject;
+					go.name = "FRAGMENT";
+					fragments++;
+
+					break;
+				// Section Two
+				case 2:
+					// Get a random cell in section two
+					row = UnityEngine.Random.Range(0, 6);
+					col = UnityEngine.Random.Range(9, 18);
+					position = mazeCells[row, col].floor.transform.position;
+
+					// Create a fragment at the given position
+					go = Instantiate(fragment, new Vector3(position.x, -0.5f, position.z), Quaternion.identity) as GameObject;
+					go.name = "FRAGMENT";
+					fragments++;
+
+					break;
+				// Section Three
+				case 3:
+					// Get a random cell in section three
+					row = UnityEngine.Random.Range(6, 12);
+					col = UnityEngine.Random.Range(0, 9);
+					position = mazeCells[row, col].floor.transform.position;
+
+					// Create a fragment at the given position
+					go = Instantiate(fragment, new Vector3(position.x, -0.5f, position.z), Quaternion.identity) as GameObject;
+					go.name = "FRAGMENT";
+					fragments++;
+
+					break;
+				// Section Four
+				case 4:
+					// Get a random cell in section four
+					row = UnityEngine.Random.Range(6, 12);
+					col = UnityEngine.Random.Range(9, 18);
+					position = mazeCells[row, col].floor.transform.position;
+
+					// Create a fragment at the given position
+					go = Instantiate(fragment, new Vector3(position.x, -0.5f, position.z), Quaternion.identity) as GameObject;
+					go.name = "FRAGMENT";
+					fragments++;
+
+					break;
 			}
 		}
 	}
@@ -192,13 +270,12 @@ public class MazeLoader : MonoBehaviour {
 	 */
 	private void GenerateMazeSection(int startRow, int startCol, int stopRow, int stopCol, string tag)
 	{
-		CopyCurrentMazeLayout();
-
 		// Grab all objects with the given tag, then destroy them		
 		GameObject[] objects = GameObject.FindGameObjectsWithTag(tag);
 		foreach (GameObject go in objects)
 		{
-			if (go.transform.position.y == 0)
+			// Only destroy it if the y value is 0, since we have copies below the maze
+			if (go.transform.position.y == 0.0f)
 			{
 				Destroy(go);
 			}			
@@ -220,9 +297,9 @@ public class MazeLoader : MonoBehaviour {
 				}
 
 				// East walls
-				if ((tag == "SectionOne" || tag == "SectionThree") && c == stopCol - 1)
+				if ((tag == "SectionOne" || tag == "SectionThree") && c == (stopCol - 1))
 				{
-					if (UnityEngine.Random.value > 0.3f)
+					if (UnityEngine.Random.value > 0.5f)
 					{
 						mazeCells[r, c].eastWall = Instantiate(wall, new Vector3(r * size, 0, (c * size) + (size / 2f)), Quaternion.identity) as GameObject;
 						mazeCells[r, c].eastWall.name = "East Wall " + r + "," + c;
@@ -246,9 +323,9 @@ public class MazeLoader : MonoBehaviour {
 				}
 
 				// South walls
-				if ((tag == "SectionOne" || tag == "SectionTwo") && r == stopRow - 1)
+				if ((tag == "SectionOne" || tag == "SectionTwo") && r == (stopRow - 1))
 				{
-					if (UnityEngine.Random.value > 0.3f)
+					if (UnityEngine.Random.value > 0.5f)
 					{
 						mazeCells[r, c].southWall = Instantiate(wall, new Vector3((r * size) + (size / 2f), 0, c * size), Quaternion.identity) as GameObject;
 						mazeCells[r, c].southWall.name = "South Wall " + r + "," + c;
@@ -328,14 +405,14 @@ public class MazeLoader : MonoBehaviour {
 	private void CopyCurrentMazeLayout()
 	{
 		// Initialize an array to store the current layout of the maze
-		MazeCell[,] layout = new MazeCell[mazeRows, mazeColumns];
+		MazeCell[,] layoutCopy = new MazeCell[mazeRows, mazeColumns];
 
 		// Destroy any walls at the depth we're about to create the copy at
 		GameObject[] objects = Resources.FindObjectsOfTypeAll(typeof(GameObject)) as GameObject[];
 		foreach (GameObject go in objects)
 		{
 			// This iterates over every game object, so make sure we only destroy the ones at the specified depth
-			if (go != null && go.transform.position.y == (layoutIndex * -10))
+			if (go.transform.position.y == (layoutIndex * -10))
 			{
 				Destroy(go);
 			}
@@ -347,58 +424,114 @@ public class MazeLoader : MonoBehaviour {
 			for (int c = 0; c < mazeColumns; c++)
 			{
 				// Initialize the current cell and determine which section it is in (so we can tag it appropriately)
-				layout[r, c] = new MazeCell();
-				//string sectionTag = GetSectionTag(r, c);
+				layoutCopy[r, c] = new MazeCell();
+				layoutCopy[r, c].visited = true;
+
+				string sectionTag = GetSectionTag(r, c);
 
 				// If there's a north wall in this cell, create one in the copy
 				if (mazeCells[r, c].northWall != null)
 				{
-					layout[r, c].northWall = Instantiate(wall, new Vector3((r * size) - (size / 2f), layoutIndex * -10, c * size), Quaternion.identity) as GameObject;
-					//layout[r, c].northWall.name = "North Wall " + r + "," + c;
-					layout[r, c].northWall.transform.Rotate(Vector3.up * 90f);
-					//layout[r, c].northWall.tag = sectionTag;
+					layoutCopy[r, c].northWall = Instantiate(wall, new Vector3((r * size) - (size / 2f), layoutIndex * -10, c * size), Quaternion.identity) as GameObject;
+					layoutCopy[r, c].northWall.name = "North Wall " + r + "," + c;
+					layoutCopy[r, c].northWall.transform.Rotate(Vector3.up * 90f);
+					layoutCopy[r, c].northWall.tag = sectionTag;
 				}
 
 				// If there's a south wall in this cell, create one in the copy
 				if (mazeCells[r, c].southWall != null)
 				{
-					layout[r, c].southWall = Instantiate(wall, new Vector3((r * size) + (size / 2f), layoutIndex * -10, c * size), Quaternion.identity) as GameObject;
-					//layout[r, c].southWall.name = "South Wall " + r + "," + c;
-					layout[r, c].southWall.transform.Rotate(Vector3.up * 90f);
-					//layout[r, c].southWall.tag = sectionTag;
+					layoutCopy[r, c].southWall = Instantiate(wall, new Vector3((r * size) + (size / 2f), layoutIndex * -10, c * size), Quaternion.identity) as GameObject;
+					layoutCopy[r, c].southWall.name = "South Wall " + r + "," + c;
+					layoutCopy[r, c].southWall.transform.Rotate(Vector3.up * 90f);
+					layoutCopy[r, c].southWall.tag = sectionTag;
 				}
 
 				// If there's a east wall in this cell, create one in the copy
 				if (mazeCells[r, c].eastWall != null)
 				{
-					layout[r, c].eastWall = Instantiate(wall, new Vector3(r * size, layoutIndex * -10, (c * size) + (size / 2f)), Quaternion.identity) as GameObject;
-					//layout[r, c].eastWall.name = "East Wall " + r + "," + c;
-					//layout[r, c].eastWall.tag = sectionTag;
+					layoutCopy[r, c].eastWall = Instantiate(wall, new Vector3(r * size, layoutIndex * -10, (c * size) + (size / 2f)), Quaternion.identity) as GameObject;
+					layoutCopy[r, c].eastWall.name = "East Wall " + r + "," + c;
+					layoutCopy[r, c].eastWall.tag = sectionTag;
 				}
 
 				// If there's a west wall in this cell, create one in the copy
 				if (mazeCells[r, c].westWall != null)
 				{
-					layout[r, c].westWall = Instantiate(wall, new Vector3(r * size, layoutIndex * -10, (c * size) - (size / 2f)), Quaternion.identity) as GameObject;
-					//layout[r, c].westWall.name = "West Wall " + r + "," + c;
-					//layout[r, c].westWall.tag = sectionTag;
+					layoutCopy[r, c].westWall = Instantiate(wall, new Vector3(r * size, layoutIndex * -10, (c * size) - (size / 2f)), Quaternion.identity) as GameObject;
+					layoutCopy[r, c].westWall.name = "West Wall " + r + "," + c;
+					layoutCopy[r, c].westWall.tag = sectionTag;
 				}
 			}
 		}
 
 		// Add the copy to the list of copies
-		timeController.mazeList.Add(new LayoutData(layoutIndex * -10, layout));
+		//timeController.mazeList.Add(new LayoutData(layoutIndex * -10, layoutCopy));
+		timeController.layoutList.Add(layoutCopy);
 
 		// Increment the index counter
 		layoutIndex++;
 
 		// If the index is greater than 3 (we only want three copies of the maze), reset it and remove the first copy
-		if (layoutIndex > 3)
+		if (layoutIndex > 2)
 		{
 			layoutIndex = 1;
-			timeController.mazeList.RemoveAt(0);			
-		}
+			timeController.layoutList.RemoveAt(0);			
+		}		
 	}
+
+	/*private void CreateLayoutFromCopy()
+	{
+		LayoutData _ = timeController.mazeList[timeController.mazeList.Count - 1] as LayoutData;
+		MazeCell[,] temp = _.layout;
+
+		// Iterate over the current maze in order to make a copy of it
+		for (int r = 0; r < mazeRows; r++)
+		{
+			for (int c = 0; c < mazeColumns; c++)
+			{
+				// Initialize the current cell and determine which section it is in (so we can tag it appropriately)
+				mazeCells[r, c] = new MazeCell();
+				string sectionTag = GetSectionTag(r, c);
+
+				// If there's a north wall in this cell, create one in the copy
+				if (temp[r, c].northWall != null)
+				{
+					mazeCells[r, c].northWall = Instantiate(wall, new Vector3((r * size) - (size / 2f), 0, c * size), Quaternion.identity) as GameObject;
+					mazeCells[r, c].northWall.name = "North Wall " + r + "," + c;
+					mazeCells[r, c].northWall.transform.Rotate(Vector3.up * 90f);
+					mazeCells[r, c].northWall.tag = sectionTag;
+				}
+
+				// If there's a south wall in this cell, create one in the copy
+				if (temp[r, c].southWall != null)
+				{
+					mazeCells[r, c].southWall = Instantiate(wall, new Vector3((r * size) + (size / 2f), 0, c * size), Quaternion.identity) as GameObject;
+					mazeCells[r, c].southWall.name = "South Wall " + r + "," + c;
+					mazeCells[r, c].southWall.transform.Rotate(Vector3.up * 90f);
+					mazeCells[r, c].southWall.tag = sectionTag;
+				}
+
+				// If there's a east wall in this cell, create one in the copy
+				if (temp[r, c].eastWall != null)
+				{
+					mazeCells[r, c].eastWall = Instantiate(wall, new Vector3(r * size, 0, (c * size) + (size / 2f)), Quaternion.identity) as GameObject;
+					mazeCells[r, c].eastWall.name = "East Wall " + r + "," + c;
+					mazeCells[r, c].eastWall.tag = sectionTag;
+				}
+
+				// If there's a west wall in this cell, create one in the copy
+				if (temp[r, c].westWall != null)
+				{
+					mazeCells[r, c].westWall = Instantiate(wall, new Vector3(r * size, 0, (c * size) - (size / 2f)), Quaternion.identity) as GameObject;
+					mazeCells[r, c].westWall.name = "West Wall " + r + "," + c;
+					mazeCells[r, c].westWall.tag = sectionTag;
+				}
+			}
+		}
+
+		//mazeList.RemoveAt(mazeList.Count - 1);
+	}*/
 
 	/*public void CreateMazeFromCopy()
 	{

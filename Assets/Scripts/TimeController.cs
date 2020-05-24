@@ -7,18 +7,9 @@ using UnityEngine.AI;
 using UnityEngine.Rendering.PostProcessing;
 using UnityEngine.UI;
 
-public class WaitFor
-{
-    public static IEnumerator Frames(int frameCount)
-    {
-        while (frameCount > 0)
-        {
-            frameCount--;
-            yield return null;
-        }
-    }
-}
-
+/**
+ * Class used to keep track of information about the player and agent(s).
+ */
 public class FrameData
 {
     public Vector3 position;
@@ -33,44 +24,6 @@ public class FrameData
     }
 }
 
-public class MazeData
-{
-    public int startRow;
-    public int startCol;
-    public int stopRow;
-    public int stopCol;
-    public string sectionTag;
-
-    public float depth;
-
-    public MazeCell[,] layout;
-
-    public MazeData(int _startRow, int _startCol, int _stopRow, int _stopCol, string _sectionTag, float _depth, MazeCell[,] _layout)
-    {
-        this.startRow = _startRow;
-        this.startCol = _startCol;
-        this.stopRow = _stopRow;
-        this.stopCol = _stopCol;
-        this.sectionTag = _sectionTag;
-
-        this.depth = _depth;
-
-        this.layout = _layout;
-    }
-}
-
-public class LayoutData
-{
-    public float depth;
-    public MazeCell[,] layout;
-
-    public LayoutData(float _depth, MazeCell[,] _layout)
-    {        
-        this.depth = _depth;
-        this.layout = _layout;
-    }
-}
-
 public class TimeController : MonoBehaviour
 {
     #region Editor
@@ -79,8 +32,10 @@ public class TimeController : MonoBehaviour
     [SerializeField] private NavMeshAgent agent;
     [SerializeField] private Camera camera;
     [SerializeField] private Text timeLabel;
-    [SerializeField] private Text rewindTimeLabel;
     [SerializeField] private MazeLoader mazeLoader;
+    [SerializeField] private Image rewindMeter;
+    [SerializeField] private Image rewindMeterBG;
+    public float smoothRefRewind;
 
     #endregion
 
@@ -110,20 +65,20 @@ public class TimeController : MonoBehaviour
 
     public bool isReversing = false;
     private bool firstCycle = true;
+    private bool isLayoutReverting = false;
 
     public int keyFrame = 5;
     private int frameCounter = 0;
     private int rewindCounter = 0;
-    private float allowedRecordTime = 10f;
+    private float allowedRecordTime = 10.0f;
     public float rewindTime;
 
     private LensDistortion lensDistortionLayer = null;
     private ChromaticAberration chromaticAberrationLayer = null;
     private ColorGrading colorGradingLayer = null;
     
-    //public MazeCell[,] mazeCells;
     public ArrayList mazeList;
-    public List<MazeCell[,]> layoutList;
+    public ArrayList layoutList;
 
     #endregion
 
@@ -134,15 +89,16 @@ public class TimeController : MonoBehaviour
         agentKeyFrames = new ArrayList();
         playerStamina = new ArrayList();
 
-        // Create arrays to hold the maze data
-        mazeList = new ArrayList();
-        //mazeCells = new MazeCell[mazeLoader.mazeRows, mazeLoader.mazeColumns];
-        layoutList = new List<MazeCell[,]>();
+        // Create an array to hold the maze layouts
+        layoutList = new ArrayList();
 
         // Initialize timer variables
         timeLimit = 80;
         timeUsed = 0;
-        rewindTime = 0;        
+        rewindTime = 0;
+
+        // We want the rewind gauage to start empty
+        rewindMeter.transform.localScale = new Vector3(0, 1, 1);
 
         // Grab the post-processing information from the camera
         PostProcessVolume volume = camera.GetComponent<PostProcessVolume>();
@@ -206,24 +162,41 @@ public class TimeController : MonoBehaviour
             {
                 // Increase the remaining time by subtracting from the time used
                 timeUsed = Mathf.Clamp(timeUsed - Time.deltaTime, 0, 80);
-                timeLeft = Mathf.Clamp((timeLimit - (int)timeUsed), 0, 80);
+                timeLeft = Mathf.Clamp((timeLimit - Mathf.RoundToInt(timeUsed)), 0, 80);
 
                 // Update the timer label
                 timeLabel.text = timeLeft.ToString();
             }            
 
-            // Decrement the player's rewind time and update the label
+            // Decrease the player's available rewind time
             rewindTime = Mathf.Clamp((rewindTime - Time.deltaTime), 0, 10);
-            rewindTimeLabel.text = ((int)rewindTime).ToString();
 
-            // Refill the player's stamina
+            // Drain the rewind meter
+            float rewindX = Mathf.Clamp(Mathf.SmoothDamp(
+                rewindMeter.transform.localScale.x, 
+                (rewindTime / allowedRecordTime) * rewindMeterBG.transform.localScale.x,
+                ref smoothRefRewind,
+                (1) * Time.deltaTime, 1),
+                0.001f,
+                rewindMeterBG.transform.localScale.x);
+            rewindMeter.transform.localScale = new Vector3(rewindX, 1, 1);
+
+            // Hide the stamina meter if it's completely refilled
             if (player.staminaInternal == player.staminaLevel)
             {
                 player.StaminaMeterBG.color = Vector4.MoveTowards(player.StaminaMeterBG.color, new Vector4(0, 0, 0, 0), 0.15f);
                 player.StaminaMeter.color = Vector4.MoveTowards(player.StaminaMeter.color, new Vector4(1, 1, 1, 0), 0.15f);
             }
-            float x = Mathf.Clamp(Mathf.SmoothDamp(player.StaminaMeter.transform.localScale.x, (player.staminaInternal / player.staminaLevel) * player.StaminaMeterBG.transform.localScale.x, ref player.smoothRef, (1) * Time.deltaTime, 1), 0.001f, player.StaminaMeterBG.transform.localScale.x);
-            player.StaminaMeter.transform.localScale = new Vector3(x, 1, 1);
+
+            // Refill the player's stamina
+            float staminaX = Mathf.Clamp(Mathf.SmoothDamp(
+                player.StaminaMeter.transform.localScale.x,
+                (player.staminaInternal / player.staminaLevel) * player.StaminaMeterBG.transform.localScale.x,
+                ref player.smoothRef,
+                (1) * Time.deltaTime, 1),
+                0.001f,
+                player.StaminaMeterBG.transform.localScale.x);
+            player.StaminaMeter.transform.localScale = new Vector3(staminaX, 1, 1);            
         }
         else
         {
@@ -239,11 +212,28 @@ public class TimeController : MonoBehaviour
             // Time has run out
             else
             {
-                timeLabel.text = "FIND THE EXIT";
+                timeLabel.text = "GAME OVER";
             }
 
+            // Increase the player's available rewind time
             rewindTime = Mathf.Clamp((rewindTime + Time.deltaTime), 0, 10);
-            rewindTimeLabel.text = ((int)rewindTime).ToString();
+
+            // Refill the rewind gauge
+            float rewindX = Mathf.Clamp(Mathf.SmoothDamp(rewindMeter.transform.localScale.x, (rewindTime / allowedRecordTime) * rewindMeterBG.transform.localScale.x, ref smoothRefRewind, (1) * Time.deltaTime, 1), 0.001f, rewindMeterBG.transform.localScale.x);
+            rewindMeter.transform.localScale = new Vector3(rewindX, 1, 1);            
+        }
+
+        // Show the rewind meter if it's not full
+        if (rewindTime != allowedRecordTime)
+        {
+            rewindMeterBG.color = Vector4.MoveTowards(rewindMeterBG.color, new Vector4(0, 0, 0, 0.5f), 0.15f);
+            rewindMeter.color = Vector4.MoveTowards(rewindMeter.color, new Vector4(0, 1, 1, 1), 0.15f);
+        }
+        // Hide the rewind meter if it's completely refilled
+        else
+        {
+            rewindMeterBG.color = Vector4.MoveTowards(rewindMeterBG.color, new Vector4(0, 0, 0, 0), 0.15f);
+            rewindMeter.color = Vector4.MoveTowards(rewindMeter.color, new Vector4(0, 0, 0, 0), 0.15f);
         }
     }
 
@@ -264,12 +254,6 @@ public class TimeController : MonoBehaviour
         if (agentKeyFrames.Count > (allowedRecordTime / Time.fixedDeltaTime))
         {
             agentKeyFrames.RemoveAt(0);
-        }
-
-        // Recorded maze layouts
-        if (mazeList.Count > 3)
-        {
-            mazeList.RemoveAt(0);
         }
 
         // If we're not at the 5th frame yet, increment the frame counter
@@ -315,7 +299,7 @@ public class TimeController : MonoBehaviour
             RestorePositions();
         }
 
-        // Interpolate the player's position, rotation, camera facing, and stamina back to previous positions
+        // Interpolate the player's position, rotation, camera facing, and stamina back to previously recorded positions
         float interpolation = (float)rewindCounter / (float)keyFrame;
         player.transform.position = Vector3.Lerp(playerPreviousPosition, playerCurrentPosition, interpolation);
         player.transform.rotation = Quaternion.Lerp(playerPreviousRotation, playerCurrentRotation, interpolation);
@@ -326,31 +310,27 @@ public class TimeController : MonoBehaviour
         agent.transform.position = Vector3.Lerp(agentPreviousPosition, agentCurrentPosition, interpolation);
         agent.transform.rotation = Quaternion.Lerp(agentPreviousRotation, agentCurrentRotation, interpolation);
 
-        if (mazeList.Count > 0 && timeLeft % 5 == 0.0f)
-        {
-            DeleteCurrentLayout();
-            CreateLayoutFromCopy();
-            //MoveWallsUp();
-            //TagWalls();
+        if (timeLeft % 5 != 0) isLayoutReverting = false;
+        // Check if the remaining time is divisible by 5 by checking the last digit (using mod causes this to be true longer than we want for some reason, so we do it this way)
+        bool correctInterval = timeLeft.ToString().EndsWith("5") || timeLeft.ToString().EndsWith("0");
 
-            //StartCoroutine(TestFunction());
-            
+        if (layoutList.Count > 0 && timeLeft % 5 == 0 && !isLayoutReverting)
+        {
+            // Set the flag and revert the maze
+            isLayoutReverting = true;
+            CreateLayoutFromCopy();
+
             // Update the nav mesh
             mazeLoader.mazeChanged = true;
 
-            // Remove the layout we just swapped in
-            //mazeList.RemoveAt(mazeList.Count - 1);
+            // Remove the layout data we just swapped in
+            layoutList.RemoveAt(layoutList.Count - 1);
+
+/*            if (layoutList.Count <= 0)
+            {
+                mazeLoader.layoutIndex = 1;
+            }*/
         }        
-    }
-
-    public IEnumerator TestFunction()
-    {
-        yield return WaitFor.Frames(30);
-        //MoveWallsUp();
-        //TagWalls();
-        //CreateMazeFromCopy();
-
-        StopCoroutine(TestFunction());
     }
 
     /**
@@ -400,13 +380,19 @@ public class TimeController : MonoBehaviour
             agentKeyFrames.RemoveAt(agentLastIndex);
         }
     }
-    
-    private void DeleteCurrentLayout()
+
+    /**
+     * Reverts the maze to the most recent previous version by rebuilding the walls.
+     */
+    public void CreateLayoutFromCopy()
     {
+        // Destroy all the walls currently inside the maze (their y-value will always be 0)
         foreach (GameObject go in Resources.FindObjectsOfTypeAll(typeof(GameObject)) as GameObject[])
         {
+            // Make sure we're only destroying the walls
             if (go.CompareTag("SectionOne") || go.CompareTag("SectionTwo") || go.CompareTag("SectionThree") || go.CompareTag("SectionFour"))
             {
+                // Make sure the y-value is actually 0
                 if (go.transform.position.y == 0.0f)
                 {
                     Destroy(go);
@@ -414,15 +400,10 @@ public class TimeController : MonoBehaviour
             }
         }
 
-        //CreateMazeFromCopy();
-    }
+        // Grab the most recent previous version from the stored copies
+        MazeCell[,] temp = layoutList[layoutList.Count - 1] as MazeCell[,];
 
-    public void CreateLayoutFromCopy()
-    {
-        LayoutData _ = mazeList[mazeList.Count - 1] as LayoutData;
-        MazeCell[,] temp = _.layout;
-
-        MazeCell[,] mazeCells = mazeLoader.mazeCells;
+        // Grab these here for better readability down below
         GameObject wall = mazeLoader.wall;
         float size = mazeLoader.size;
 
@@ -432,7 +413,8 @@ public class TimeController : MonoBehaviour
             for (int c = 0; c < mazeLoader.mazeColumns; c++)
             {
                 // Initialize the current cell and determine which section it is in (so we can tag it appropriately)
-                mazeCells[r, c] = new MazeCell();
+                mazeLoader.mazeCells[r, c] = new MazeCell();
+                mazeLoader.mazeCells[r, c].visited = true;
                 string sectionTag = GetSectionTag(r, c);
 
                 // If there's a north wall in this cell, create one in the copy
@@ -442,6 +424,9 @@ public class TimeController : MonoBehaviour
                     mazeLoader.mazeCells[r, c].northWall.name = "North Wall " + r + "," + c;
                     mazeLoader.mazeCells[r, c].northWall.transform.Rotate(Vector3.up * 90f);
                     mazeLoader.mazeCells[r, c].northWall.tag = sectionTag;
+                    
+                    DestroyWallIfItExists(temp[r, c].northWall);
+                    temp[r, c].northWall = null;
                 }
 
                 // If there's a south wall in this cell, create one in the copy
@@ -451,6 +436,9 @@ public class TimeController : MonoBehaviour
                     mazeLoader.mazeCells[r, c].southWall.name = "South Wall " + r + "," + c;
                     mazeLoader.mazeCells[r, c].southWall.transform.Rotate(Vector3.up * 90f);
                     mazeLoader.mazeCells[r, c].southWall.tag = sectionTag;
+                    
+                    DestroyWallIfItExists(temp[r, c].southWall);
+                    temp[r, c].southWall = null;
                 }
 
                 // If there's a east wall in this cell, create one in the copy
@@ -459,6 +447,9 @@ public class TimeController : MonoBehaviour
                     mazeLoader.mazeCells[r, c].eastWall = Instantiate(wall, new Vector3(r * size, 0, (c * size) + (size / 2f)), Quaternion.identity) as GameObject;
                     mazeLoader.mazeCells[r, c].eastWall.name = "East Wall " + r + "," + c;
                     mazeLoader.mazeCells[r, c].eastWall.tag = sectionTag;
+                   
+                    DestroyWallIfItExists(temp[r, c].eastWall);
+                    temp[r, c].eastWall = null;
                 }
 
                 // If there's a west wall in this cell, create one in the copy
@@ -467,49 +458,22 @@ public class TimeController : MonoBehaviour
                     mazeLoader.mazeCells[r, c].westWall = Instantiate(wall, new Vector3(r * size, 0, (c * size) - (size / 2f)), Quaternion.identity) as GameObject;
                     mazeLoader.mazeCells[r, c].westWall.name = "West Wall " + r + "," + c;
                     mazeLoader.mazeCells[r, c].westWall.tag = sectionTag;
+                    
+                    DestroyWallIfItExists(temp[r, c].westWall);
+                    temp[r, c].westWall = null;
                 }
             }
         }
     }
 
-    private void MoveWallsUp()
+    /**
+     * Destroys the given wall.
+     */
+    private void DestroyWallIfItExists(GameObject wall)
     {
-        LayoutData _ = mazeList[mazeList.Count - 1] as LayoutData;
-        MazeCell[,] temp = _.layout;
-        for (int r = 0; r < mazeLoader.mazeRows; r++)
+        if (wall != null)
         {
-            for (int c = 0; c < mazeLoader.mazeColumns; c++)
-            {
-                string sectionTag = GetSectionTag(r, c);
-                GameObject northWall = temp[r, c].northWall;
-                GameObject southWall = temp[r, c].southWall;
-                GameObject eastWall = temp[r, c].eastWall;
-                GameObject westWall = temp[r, c].westWall;
-
-                if (northWall != null)
-                {
-                    northWall.transform.position = new Vector3(northWall.transform.position.x, 0, northWall.transform.position.z);
-                    //northWall.tag = sectionTag;
-                }
-
-                if (southWall != null)
-                {
-                    southWall.transform.position = new Vector3(southWall.transform.position.x, 0, southWall.transform.position.z);
-                    //southWall.tag = sectionTag;
-                }
-
-                if (eastWall != null)
-                {
-                    eastWall.transform.position = new Vector3(eastWall.transform.position.x, 0, eastWall.transform.position.z);
-                    //eastWall.tag = sectionTag;
-                }
-
-                if (westWall != null)
-                {
-                    westWall.transform.position = new Vector3(westWall.transform.position.x, 0, westWall.transform.position.z);
-                    //westWall.tag = sectionTag;
-                }
-            }
+            GameObject.Destroy(wall);
         }
     }
 
