@@ -48,7 +48,6 @@ public class SoundScript : MonoBehaviour
             // Fade the regular music in and fade out the chase music
             SoundManager.SetFadeOut(1, 0.1f);
             SoundManager.PlayMusic(0, safe);
-            //SoundManager.SetFadeIn(0, 0.01f, SoundManager.trackList[0].maxVolume);            
         }
 
         // Check if the player is in the danger zone
@@ -62,7 +61,7 @@ public class SoundScript : MonoBehaviour
 
             // Play the chase music and fade out the regular music
             SoundManager.SetFadeOut(0, 0.1f);
-            SoundManager.PlayMusic(1, chaseStart);            
+            SoundManager.PlayMusic(1, chaseStart);
         }
     }
 }

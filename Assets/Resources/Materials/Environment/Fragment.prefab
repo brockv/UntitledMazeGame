@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 6118779001013071123}
   - component: {fileID: 3941029430188680310}
   - component: {fileID: 1047197115285854606}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Fragment
   m_TagString: SAFE
   m_Icon: {fileID: 0}
