@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Rendering.PostProcessing;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /**
@@ -215,7 +216,14 @@ public class TimeController : MonoBehaviour
             // Time has run out
             else
             {
-                timeLabel.text = "GAME OVER";
+                Debug.Log("GAME OVER");
+
+                // Unlock the cursor and make it visible again
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+
+                // Load the Game Over scene
+                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
             }
 
             // Increase the player's available rewind time

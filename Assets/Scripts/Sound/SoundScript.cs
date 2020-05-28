@@ -37,7 +37,7 @@ public class SoundScript : MonoBehaviour
 
     private void Update()
     {
-        //Debug.Log("DISTANCE: " + Vector3.Distance(agent.transform.position, player.transform.position));
+        Debug.Log("DISTANCE: " + Vector3.Distance(agent.transform.position, player.transform.position));
 
         // Calm zone
         if (Vector3.Distance(agent.transform.position, player.transform.position) >= safeDistance && !inSafeZone)
@@ -47,42 +47,21 @@ public class SoundScript : MonoBehaviour
             inDangerZone = false;
             
             SoundManager.PlayMusic(0, safe);
-            //SoundManager.SetFadeIn(0, 0.01f, SoundManager.trackList[0].maxVolume);
+            SoundManager.SetFadeIn(0, 0.01f, SoundManager.trackList[0].maxVolume);
 
             SoundManager.SetFadeOut(1, 0.01f);
         }
 
         // Danger zone
-        if (Vector3.Distance(agent.transform.position, gameObject.transform.position) <= safeDistance &&
-            Vector3.Distance(agent.transform.position, gameObject.transform.position) > dangerDistance && !inDangerZone)
-        {
-            Debug.Log("In alert zone...");
-            inSafeZone = false;
-            inDangerZone = false;
-            //SoundManager.PlayMusic(1, chaseStart);
-            //SoundManager.SetFadeOut(0, 0.1f);
-            
-            SoundManager.PlayMusic(1, chaseOngoing);
-            //SoundManager.SetFadeIn(1, 0.05f, SoundManager.trackList[1].volume);
-
-            SoundManager.SetFadeOut(0, 0.01f);
-
-        }
-
-        // Danger zone
-/*        if (Vector3.Distance(agent.transform.position, player.transform.position) <= alertDistance && !inDangerZone)
+        if (Vector3.Distance(agent.transform.position, player.transform.position) <= dangerDistance && !inDangerZone)
         {
             Debug.Log("In danger zone...");
-            inCalmZone = false;
-            inAlertZone = false;
+            inSafeZone = false;
             inDangerZone = true;
 
-            SoundManager.PlayMusic(2, chaseOngoing);
-            //SoundManager.SetFadeIn(1, 0.05f, SoundManager.trackList[1].volume);
-
+            SoundManager.PlayMusic(1, chaseStart);
             SoundManager.SetFadeOut(0, 0.01f);
-            SoundManager.trackList[1].audioSource.Stop();
-        }*/
+        }
     }
 }
 

@@ -549,8 +549,8 @@ MonoBehaviour:
   gameObject: {fileID: 856465332}
   player: {fileID: 1311176471}
   agent: {fileID: 899229208}
-  safeDistance: 0
-  dangerDistance: 0
+  safeDistance: 50
+  dangerDistance: 30
   safe: {fileID: 8300000, guid: d53d6acc1efce1e4296fdd63d421a1a1, type: 3}
   chaseStart: {fileID: 8300000, guid: 1848e5c0f65bc1542a32b7b6c41f30a4, type: 3}
   chaseOngoing: {fileID: 8300000, guid: 10546d9649879d14e8277d84c34d122e, type: 3}
@@ -700,11 +700,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Zombie
       objectReference: {fileID: 0}
-    - target: {fileID: 7389507112651452681, guid: 6dc4cf4496348884d8ee27743ae38562,
-        type: 3}
-      propertyPath: m_Controller
-      value: 
-      objectReference: {fileID: 9100000, guid: e2cf68ff4b1ffda45a77f7307dd789b9, type: 2}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6dc4cf4496348884d8ee27743ae38562, type: 3}
 --- !u!1 &615665558
@@ -1129,7 +1124,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 730d84151323e69468f68f8a01aea9ff, type: 2}
+  - {fileID: 0}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
