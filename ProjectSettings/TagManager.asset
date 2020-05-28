@@ -15,6 +15,7 @@ TagManager:
   - BackupSectionFour
   - BackupSectionALL
   - SAFE
+  - Fragment
   layers:
   - Default
   - TransparentFX
