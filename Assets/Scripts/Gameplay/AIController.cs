@@ -34,7 +34,11 @@ public class AIController : MonoBehaviour
             // Only move the agent if the player isn't reversing time
             if (!timeController.isReversing)
             {
+                // Move
                 MoveAgent();
+
+                // Drain the player's remaining time
+                DrainTime();
             }
 
             lineRenderer.positionCount = agent.path.corners.Length;
@@ -59,6 +63,18 @@ public class AIController : MonoBehaviour
         else
         {
             character.Move(Vector3.zero, false, false);
+        }
+    }
+
+    private void DrainTime()
+    {
+        // If the agent is close enough to the player, drain their remaining time
+        if (agent.remainingDistance <= 5.0f)
+        {
+            Debug.Log("DRAINING THE PLAYER'S TIME");
+
+            // Adding to the time used decreases the time the player has left
+            //timeController.timeUsed += 1.0f;
         }
     }
 

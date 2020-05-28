@@ -14,6 +14,7 @@ public class SoundManager : MonoBehaviour
 
     private void Awake()
     {
+        // Create an instance of the SoundManager for the coroutines
         instance = this;
     }
 
@@ -24,11 +25,9 @@ public class SoundManager : MonoBehaviour
     {
         if (numberOfTracks > 0)
         {
+            // Add each audio source to the game object and store it in the list
             for (int i = 0; i < numberOfTracks; i++)
             {
-                //AudioSource source = gameObject.AddComponent<AudioSource>();
-                //source.loop = true;
-
                 Track track = new Track { id = i, audioSource = gameObject.AddComponent<AudioSource>() };
                 trackList.Add(track);
             }
@@ -40,6 +39,7 @@ public class SoundManager : MonoBehaviour
      */
     static public void TrackSettings(int track, AudioMixer mainMix, string audioGroup, float volume, float maxVolume, bool loop = false)
     {
+        // Set the properties for this track
         trackList[track].audioSource.outputAudioMixerGroup = mainMix.FindMatchingGroups(audioGroup)[0];
         trackList[track].volume = volume;
         trackList[track].maxVolume = maxVolume;
@@ -51,7 +51,10 @@ public class SoundManager : MonoBehaviour
      */
     static public void PlayMusic(int track, AudioClip audioClip)
     {
-        AudioSource source = trackList[track].audioSource; //.PlayOneShot(audioClip, trackList[track].volume);
+        // Grab the audio source for this track
+        AudioSource source = trackList[track].audioSource;
+
+        // Set the clip, volume, and loop properties, then play it
         source.clip = audioClip;
         source.volume = trackList[track].maxVolume;
         source.loop = true;
@@ -79,12 +82,15 @@ public class SoundManager : MonoBehaviour
      */
     static IEnumerator FadeIn(int track, float speed, float maxVolume)
     {
+        // Set the fade flags
         keepFadingIn = true;
         keepFadingOut = false;
 
+        // Set the volume to zero and store it in a variable
         trackList[track].audioSource.volume = 0;
         float audioVolume = trackList[track].audioSource.volume;
 
+        // Fade the track in
         while (trackList[track].audioSource.volume < maxVolume && keepFadingIn)
         {
             audioVolume += speed;
@@ -98,11 +104,14 @@ public class SoundManager : MonoBehaviour
      */
     static IEnumerator FadeOut(int track, float speed)
     {
+        // Set the fade flags
         keepFadingIn = false;
         keepFadingOut = true;
 
+        // Grab the current volume of the track
         float audioVolume = trackList[track].maxVolume;
 
+        // Fade the track out
         while (trackList[track].audioSource.volume >= speed && keepFadingOut)
         {
             audioVolume -= speed;
@@ -110,6 +119,7 @@ public class SoundManager : MonoBehaviour
             yield return new WaitForSeconds(0.1f);
         }
 
+        // Stop it once the fade is complete -- prevents some weird audio issues
         trackList[track].audioSource.Stop();
     }
 }

@@ -9,7 +9,13 @@ public class GameOverMenu : MonoBehaviour
     public void RestartGame()
     {
         Debug.Log("GAME RESTARTED");
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex - 1);
+
+        // Lock the cursor and hide it again
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
+        SceneManager.UnloadSceneAsync("GameOver");
+        SceneManager.LoadScene("Game");
     }
 
     /**

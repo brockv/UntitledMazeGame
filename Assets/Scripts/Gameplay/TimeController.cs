@@ -336,7 +336,7 @@ public class TimeController : MonoBehaviour
                 {
                     Debug.Log("PLAYER IS WHERE THEY COLLECTED A FRAGMENT");
                     // If the fragment isn't active, make it active and increase the fragment count
-                    if (!go.activeSelf && go.transform.position == position)
+                    if (!go.activeSelf && (go.transform.position.x == position.x))
                     {
                         go.SetActive(true);
                         mazeLoader.fragments++;

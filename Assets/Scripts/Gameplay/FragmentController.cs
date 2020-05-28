@@ -11,20 +11,8 @@ public class FragmentController : MonoBehaviour
     private MazeLoader mazeLoader;
     private TimeController timeController;
 
-    Scene currentScene;
-    string sceneName;
-
     private void Awake()
     {
-        // Create a temporary reference to the current scene.
-        currentScene = SceneManager.GetActiveScene();
-
-        // Retrieve the name of this scene.
-        sceneName = currentScene.name;
-
-        // Don't run the rest if this isn't the game scene
-        if (sceneName != "Game") return;
-
         // Grab the MazeLoader and TimeController from the scene
         mazeLoader = FindObjectOfType(typeof(MazeLoader)) as MazeLoader;
         timeController = FindObjectOfType(typeof(TimeController)) as TimeController;
@@ -36,9 +24,6 @@ public class FragmentController : MonoBehaviour
     private void Update()
     {
         gameObject.transform.Rotate(rotation * Time.deltaTime);
-
-        // Don't run the rest if this isn't the game scene
-        if (sceneName != "Game") return;
 
         // Disable the trigger if time is reversing
         if (timeController.isReversing)
@@ -54,9 +39,6 @@ public class FragmentController : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        // Don't run the rest if this isn't the game scene
-        if (sceneName != "Game") return;
-
         // Exit if time is reversing
         if (timeController.isReversing) return;
 

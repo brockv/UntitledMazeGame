@@ -27,40 +27,42 @@ public class SoundScript : MonoBehaviour
         SoundManager.TrackSettings(0, mainMix, "Safe", 0.5f, 0.5f, true);
         SoundManager.TrackSettings(1, mainMix, "Danger", 0.5f, 0.5f, true);
 
-        // Fade in and start playing music
+        // Fade in and start playing the regular music
         SoundManager.PlayMusic(0, safe);
         SoundManager.SetFadeIn(0, 0.01f, SoundManager.trackList[0].maxVolume);
-
-        //SoundManager.PlayMusic(1, chaseStart);
-        //SoundManager.SetFadeOut(1, 1.0f);
     }
 
     private void Update()
     {
         Debug.Log("DISTANCE: " + Vector3.Distance(agent.transform.position, player.transform.position));
 
-        // Calm zone
+        // Check if the player is in the safe zone
         if (Vector3.Distance(agent.transform.position, player.transform.position) >= safeDistance && !inSafeZone)
         {
             Debug.Log("In calm zone...");
+
+            // Set the zone flags
             inSafeZone = true;
             inDangerZone = false;
-            
-            SoundManager.PlayMusic(0, safe);
-            SoundManager.SetFadeIn(0, 0.01f, SoundManager.trackList[0].maxVolume);
 
-            SoundManager.SetFadeOut(1, 0.01f);
+            // Fade the regular music in and fade out the chase music
+            SoundManager.SetFadeOut(1, 0.1f);
+            SoundManager.PlayMusic(0, safe);
+            //SoundManager.SetFadeIn(0, 0.01f, SoundManager.trackList[0].maxVolume);            
         }
 
-        // Danger zone
+        // Check if the player is in the danger zone
         if (Vector3.Distance(agent.transform.position, player.transform.position) <= dangerDistance && !inDangerZone)
         {
             Debug.Log("In danger zone...");
+
+            // Set the zone flags
             inSafeZone = false;
             inDangerZone = true;
 
-            SoundManager.PlayMusic(1, chaseStart);
-            SoundManager.SetFadeOut(0, 0.01f);
+            // Play the chase music and fade out the regular music
+            SoundManager.SetFadeOut(0, 0.1f);
+            SoundManager.PlayMusic(1, chaseStart);            
         }
     }
 }

@@ -549,7 +549,7 @@ MonoBehaviour:
   gameObject: {fileID: 856465332}
   player: {fileID: 1311176471}
   agent: {fileID: 899229208}
-  safeDistance: 50
+  safeDistance: 40
   dangerDistance: 30
   safe: {fileID: 8300000, guid: d53d6acc1efce1e4296fdd63d421a1a1, type: 3}
   chaseStart: {fileID: 8300000, guid: 1848e5c0f65bc1542a32b7b6c41f30a4, type: 3}
@@ -2259,6 +2259,11 @@ PrefabInstance:
     - target: {fileID: 4709505581537890, guid: 24a16ae1cdc113a4fbe8be04672f1592, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1559064051420052046, guid: 24a16ae1cdc113a4fbe8be04672f1592,
+        type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8041170538415496926, guid: 24a16ae1cdc113a4fbe8be04672f1592,
         type: 3}

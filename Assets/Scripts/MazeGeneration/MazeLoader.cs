@@ -219,8 +219,8 @@ public class MazeLoader : MonoBehaviour {
 				// Section One
 				case 1:
 					// Get a random cell in section one
-					row = UnityEngine.Random.Range(0, 6);
-					col = UnityEngine.Random.Range(0, 9);
+					row = UnityEngine.Random.Range(2, 5);
+					col = UnityEngine.Random.Range(2, 8);
 					position = mazeCells[row, col].floor.transform.position;
 
 					// Create a fragment at the given position
@@ -231,14 +231,13 @@ public class MazeLoader : MonoBehaviour {
 
 					// Add the fragment to the list
 					fragmentList.Add(go);
-					//Debug.Log("SECTION ONE FRAGMENT: " + go.transform.position);
 
 					break;
 				// Section Two
 				case 2:
 					// Get a random cell in section two
-					row = UnityEngine.Random.Range(0, 6);
-					col = UnityEngine.Random.Range(9, 18);
+					row = UnityEngine.Random.Range(2, 5);
+					col = UnityEngine.Random.Range(11, 17);
 					position = mazeCells[row, col].floor.transform.position;
 
 					// Create a fragment at the given position
@@ -249,14 +248,13 @@ public class MazeLoader : MonoBehaviour {
 
 					// Add the fragment to the list
 					fragmentList.Add(go);
-					//Debug.Log("SECTION TWO FRAGMENT: " + go.transform.position);
 
 					break;
 				// Section Three
 				case 3:
 					// Get a random cell in section three
-					row = UnityEngine.Random.Range(6, 12);
-					col = UnityEngine.Random.Range(0, 9);
+					row = UnityEngine.Random.Range(8, 11);
+					col = UnityEngine.Random.Range(2, 8);
 					position = mazeCells[row, col].floor.transform.position;
 
 					// Create a fragment at the given position
@@ -267,14 +265,13 @@ public class MazeLoader : MonoBehaviour {
 
 					// Add the fragment to the list
 					fragmentList.Add(go);
-					//Debug.Log("SECTION THREE FRAGMENT: " + go.transform.position);
 
 					break;
 				// Section Four
 				case 4:
 					// Get a random cell in section four
-					row = UnityEngine.Random.Range(6, 12);
-					col = UnityEngine.Random.Range(9, 18);
+					row = UnityEngine.Random.Range(8, 11);
+					col = UnityEngine.Random.Range(11, 17);
 					position = mazeCells[row, col].floor.transform.position;
 
 					// Create a fragment at the given position
@@ -285,7 +282,6 @@ public class MazeLoader : MonoBehaviour {
 
 					// Add the fragment to the list
 					fragmentList.Add(go);
-					//Debug.Log("SECTION FOUR FRAGMENT: " + go.transform.position);
 
 					break;
 			}
