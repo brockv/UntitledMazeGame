@@ -28,6 +28,8 @@ public class AIController : MonoBehaviour
     }
     void Update()
     {
+        if (PauseMenu.isPaused) return;
+
         // Only proceed if the player exists in the scene
         if (player != null)
         {
@@ -38,7 +40,7 @@ public class AIController : MonoBehaviour
                 MoveAgent();
 
                 // Drain the player's remaining time
-                DrainTime();
+                DrainPlayersRemainingTime();
             }
 
             lineRenderer.positionCount = agent.path.corners.Length;
@@ -66,24 +68,24 @@ public class AIController : MonoBehaviour
         }
     }
 
-    private void DrainTime()
+    private void DrainPlayersRemainingTime()
     {
         // If the agent is close enough to the player, drain their remaining time
-        if (agent.remainingDistance <= 5.0f)
+        if (Vector3.Distance(agent.transform.position, player.transform.position) <= 2.5f)
         {
             Debug.Log("DRAINING THE PLAYER'S TIME");
 
             // Adding to the time used decreases the time the player has left
-            //timeController.timeUsed += 1.0f;
+            timeController.timeUsed += 1.0f;
         }
     }
 
-    private void OnTriggerStay(Collider other)
+/*    private void OnTriggerStay(Collider other)
     {
         if (other.CompareTag("Player"))
         {
             Debug.Log("TOUCHING THE PLAYER");
             timeController.timeUsed += 1.0f;
         }
-    }
+    }*/
 }

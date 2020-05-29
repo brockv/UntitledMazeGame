@@ -62,6 +62,8 @@ public class MazeLoader : MonoBehaviour {
 	 */
 	private void BuildNewMazeSection()
 	{
+		if (PauseMenu.isPaused) return;
+
 		// Check if the remaining time is divisible by 5 by checking the last digit (using mod causes this to be true longer than we want for some reason, so we do it this way)
 		bool correctInterval = timeController.timeLeft.ToString().EndsWith("5") || timeController.timeLeft.ToString().EndsWith("0");
 
@@ -119,6 +121,8 @@ public class MazeLoader : MonoBehaviour {
 
 	void Update ()
 	{
+		if (PauseMenu.isPaused) return;
+
 		// Figure out what section of the maze the player is currently in
 		GetPlayerSection();
 
@@ -194,7 +198,7 @@ public class MazeLoader : MonoBehaviour {
 		}
 
 		// Create and place the fragments in the maze
-		PlaceFragments();		
+		PlaceFragments();
 	}
 
 	/**

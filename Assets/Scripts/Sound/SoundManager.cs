@@ -6,11 +6,11 @@ using UnityEngine.Audio;
 
 public class SoundManager : MonoBehaviour
 {
-    public static List<Track> trackList = new List<Track>();
-    public static SoundManager instance;
+    public List<Track> trackList = new List<Track>();
+    private SoundManager instance;
 
-    private static bool keepFadingIn;
-    private static bool keepFadingOut;
+    private bool keepFadingIn;
+    private bool keepFadingOut;
 
     private void Awake()
     {
@@ -21,7 +21,7 @@ public class SoundManager : MonoBehaviour
     /**
      * Adds an AudioSource to the game object for each track present.
      */
-    static public void AddTracks(int numberOfTracks, GameObject gameObject)
+    public void AddTracks(int numberOfTracks, GameObject gameObject)
     {
         if (numberOfTracks > 0)
         {
@@ -37,7 +37,7 @@ public class SoundManager : MonoBehaviour
     /**
      * Initializes the settings for a given track.
      */
-    static public void TrackSettings(int track, AudioMixer mainMix, string audioGroup, float volume, float maxVolume, bool loop = false)
+    public void TrackSettings(int track, AudioMixer mainMix, string audioGroup, float volume, float maxVolume, bool loop = false)
     {
         // Set the properties for this track
         trackList[track].audioSource.outputAudioMixerGroup = mainMix.FindMatchingGroups(audioGroup)[0];
@@ -49,7 +49,7 @@ public class SoundManager : MonoBehaviour
     /**
      * Plays the audio clip at the given track id.
      */
-    static public void PlayMusic(int track, AudioClip audioClip)
+    public void PlayMusic(int track, AudioClip audioClip)
     {
         // Grab the audio source for this track
         AudioSource source = trackList[track].audioSource;
@@ -64,7 +64,7 @@ public class SoundManager : MonoBehaviour
     /**
      * Starts the coroutine that fades a track in.
      */
-    public static void SetFadeIn(int track, float speed, float maxVolume)
+    public void SetFadeIn(int track, float speed, float maxVolume)
     {
         instance.StartCoroutine(FadeIn(track, speed, maxVolume));
     }
@@ -72,7 +72,7 @@ public class SoundManager : MonoBehaviour
     /**
      * Starts the coroutine that fades a track out.
      */
-    public static void SetFadeOut(int track, float speed)
+    public void SetFadeOut(int track, float speed)
     {
         instance.StartCoroutine(FadeOut(track, speed));
     }
@@ -80,7 +80,7 @@ public class SoundManager : MonoBehaviour
     /**
      * Fades a track in.
      */
-    static IEnumerator FadeIn(int track, float speed, float maxVolume)
+    private IEnumerator FadeIn(int track, float speed, float maxVolume)
     {
         // Set the fade flags
         keepFadingIn = true;
@@ -102,7 +102,7 @@ public class SoundManager : MonoBehaviour
     /**
      * Fades a track out.
      */
-    static IEnumerator FadeOut(int track, float speed)
+    private IEnumerator FadeOut(int track, float speed)
     {
         // Set the fade flags
         keepFadingIn = false;

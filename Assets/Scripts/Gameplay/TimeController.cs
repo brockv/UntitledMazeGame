@@ -31,6 +31,7 @@ public class TimeController : MonoBehaviour
     
     [SerializeField] private FirstPersonAIO player;
     [SerializeField] private NavMeshAgent agent;
+    [SerializeField] private int timeLimit;
     [SerializeField] private Camera camera;
     [SerializeField] private Text timeLabel;
     [SerializeField] private MazeLoader mazeLoader;
@@ -41,8 +42,7 @@ public class TimeController : MonoBehaviour
     #endregion
 
     #region Variables
-
-    private int timeLimit;
+    
     public int timeLeft;
     public float timeUsed;    
 
@@ -97,7 +97,7 @@ public class TimeController : MonoBehaviour
         fragmentList = new List<Vector3>();
 
         // Initialize timer variables
-        timeLimit = 80;
+        //timeLimit = 80;
         timeUsed = 0;
         rewindTime = 0;
 
@@ -113,6 +113,8 @@ public class TimeController : MonoBehaviour
 
     void Update()
     {
+        if (PauseMenu.isPaused) return;
+
         // Rewind time if the left mouse button is being pressed
         if (rewindTime > 1.0f)
         {
@@ -139,6 +141,8 @@ public class TimeController : MonoBehaviour
 
     void FixedUpdate()
     {
+        if (PauseMenu.isPaused) return;
+
         // Is time rewinding?
         if (isReversing)
         {            
@@ -165,8 +169,8 @@ public class TimeController : MonoBehaviour
             if (timeLeft > 0)
             {
                 // Increase the remaining time by subtracting from the time used
-                timeUsed = Mathf.Clamp(timeUsed - Time.deltaTime, 0, 80);
-                timeLeft = Mathf.Clamp((timeLimit - Mathf.RoundToInt(timeUsed)), 0, 80);
+                timeUsed = Mathf.Clamp(timeUsed - Time.deltaTime, 0, 120);
+                timeLeft = Mathf.Clamp((timeLimit - Mathf.RoundToInt(timeUsed)), 0, 120);
 
                 // Update the timer label
                 timeLabel.text = timeLeft.ToString();
@@ -223,7 +227,8 @@ public class TimeController : MonoBehaviour
                 Cursor.visible = true;
 
                 // Load the Game Over scene
-                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+                SceneManager.UnloadSceneAsync("Game");
+                SceneManager.LoadScene("GameOver");
             }
 
             // Increase the player's available rewind time
@@ -332,11 +337,13 @@ public class TimeController : MonoBehaviour
         {
             foreach (GameObject go in mazeLoader.fragmentList)
             {
-                if (Mathf.FloorToInt(player.transform.position.x) == position.x && Mathf.FloorToInt(player.transform.position.z) == position.z)
+                Debug.Log(Vector3.Distance(player.transform.position, position));
+                if (Vector3.Distance(player.transform.position, position) <= 5.0f)
+                //if (Mathf.FloorToInt(player.transform.position.x) == position.x && Mathf.FloorToInt(player.transform.position.z) == position.z)
                 {
                     Debug.Log("PLAYER IS WHERE THEY COLLECTED A FRAGMENT");
                     // If the fragment isn't active, make it active and increase the fragment count
-                    if (!go.activeSelf && (go.transform.position.x == position.x))
+                    if (!go.activeSelf)
                     {
                         go.SetActive(true);
                         mazeLoader.fragments++;

@@ -345,6 +345,8 @@ public class BETA_SETTINGS{
 
     private void Update()
     {
+        if (PauseMenu.isPaused) return;
+
         if (timeController.isReversing) return;
 
         #region Look Settings - Update
@@ -402,6 +404,8 @@ public class BETA_SETTINGS{
 
     private void FixedUpdate()
     {
+        if (PauseMenu.isPaused) return;
+
         if (timeController.isReversing) return;
 
         #region Look Settings - FixedUpdate

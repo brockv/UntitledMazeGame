@@ -10,9 +10,9 @@ public class GameOverMenu : MonoBehaviour
     {
         Debug.Log("GAME RESTARTED");
 
-        // Lock the cursor and hide it again
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        // Unlock the cursor and hide it again
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
 
         SceneManager.UnloadSceneAsync("GameOver");
         SceneManager.LoadScene("Game");
