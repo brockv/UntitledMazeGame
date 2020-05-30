@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using System.Net;
 using System.Reflection.Emit;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
 
 public class MazeLoader : MonoBehaviour {
 
@@ -62,6 +63,7 @@ public class MazeLoader : MonoBehaviour {
 	 */
 	private void BuildNewMazeSection()
 	{
+		// Exit if the game is paused
 		if (PauseMenu.isPaused) return;
 
 		// Check if the remaining time is divisible by 5 by checking the last digit (using mod causes this to be true longer than we want for some reason, so we do it this way)
@@ -121,6 +123,7 @@ public class MazeLoader : MonoBehaviour {
 
 	void Update ()
 	{
+		// Exit if the game is paused
 		if (PauseMenu.isPaused) return;
 
 		// Figure out what section of the maze the player is currently in
@@ -138,9 +141,11 @@ public class MazeLoader : MonoBehaviour {
 		// Update the fragment counter text
 		fragmentCounter.text = fragments.ToString();
 
-		LineRenderer lineRenderer = gameObject.GetComponent<LineRenderer>();
-		lineRenderer.SetPosition(0, player.transform.position);
-		lineRenderer.SetPosition(1, agent.transform.position);
+		if (fragments == 0)
+		{
+			SceneManager.UnloadSceneAsync("Game");
+			SceneManager.LoadSceneAsync("SuccessMenu");
+		}
 	}
 
 	/**

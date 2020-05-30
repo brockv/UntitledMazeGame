@@ -14,32 +14,29 @@ public class SoundScript : MonoBehaviour
     [SerializeField] float safeDistance;
     [SerializeField] float dangerDistance;
     [SerializeField] private AudioClip safe;
-    [SerializeField] private AudioClip chaseStart;
-    [SerializeField] private AudioClip chaseOngoing;
-    [SerializeField] private AudioClip chaseEnd;
+    [SerializeField] private AudioClip danger;
     [SerializeField] private AudioMixer mainMix;
-
-    private bool inSafeZone = true;
-    private bool inDangerZone = false;
-
     [SerializeField] private SoundManager soundManager;
+
+    public bool inSafeZone = true;
+    public bool inDangerZone = false;    
 
     private void Start()
     {
         // Add the tracks and initialize their settings
         soundManager.AddTracks(2, gameObject);
-        soundManager.TrackSettings(0, mainMix, "Safe", 0.5f, 0.5f, true);
-        soundManager.TrackSettings(1, mainMix, "Danger", 0.5f, 0.5f, true);
+        soundManager.TrackSettings(0, mainMix, "Safe", 0.0f, 1.0f, true);
+        soundManager.TrackSettings(1, mainMix, "Danger", 0.0f, 1.0f, true);
 
         // Fade in and start playing the regular music
         soundManager.PlayMusic(0, safe);
-        soundManager.SetFadeIn(0, 0.01f, soundManager.trackList[0].maxVolume);
+        soundManager.PlayMusic(1, danger);
+
+        soundManager.SetFadeIn(0, 0.5f);
     }
 
     private void Update()
     {
-        //Debug.Log("DISTANCE: " + Vector3.Distance(agent.transform.position, player.transform.position));
-
         // Check if the player is in the safe zone
         if (Vector3.Distance(agent.transform.position, player.transform.position) >= safeDistance && !inSafeZone)
         {
@@ -49,9 +46,8 @@ public class SoundScript : MonoBehaviour
             inSafeZone = true;
             inDangerZone = false;
 
-            // Fade the regular music in and fade out the chase music
-            soundManager.SetFadeOut(1, 0.1f);
-            soundManager.PlayMusic(0, safe);
+            // Fade out the chase music
+            soundManager.SetFadeOut(1, 0.0f);
         }
 
         // Check if the player is in the danger zone
@@ -63,9 +59,8 @@ public class SoundScript : MonoBehaviour
             inSafeZone = false;
             inDangerZone = true;
 
-            // Play the chase music and fade out the regular music
-            soundManager.SetFadeOut(0, 0.1f);
-            soundManager.PlayMusic(1, chaseStart);
+            // Fade in the chase music
+            soundManager.SetFadeIn(1, 0.5f);
         }
     }
 }

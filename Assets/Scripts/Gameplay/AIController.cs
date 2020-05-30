@@ -24,10 +24,11 @@ public class AIController : MonoBehaviour
         // Disable rotation -- the ThirdPersonCharacter script will handle it
         agent.updateRotation = false;
 
-        lineRenderer = GetComponent<LineRenderer>();
+        //lineRenderer = GetComponent<LineRenderer>();
     }
     void Update()
     {
+        // Exit if the game is paused
         if (PauseMenu.isPaused) return;
 
         // Only proceed if the player exists in the scene
@@ -43,8 +44,8 @@ public class AIController : MonoBehaviour
                 DrainPlayersRemainingTime();
             }
 
-            lineRenderer.positionCount = agent.path.corners.Length;
-            lineRenderer.SetPositions(agent.path.corners);
+            //lineRenderer.positionCount = agent.path.corners.Length;
+            //lineRenderer.SetPositions(agent.path.corners);
         }
     }
 
@@ -71,7 +72,7 @@ public class AIController : MonoBehaviour
     private void DrainPlayersRemainingTime()
     {
         // If the agent is close enough to the player, drain their remaining time
-        if (Vector3.Distance(agent.transform.position, player.transform.position) <= 2.5f)
+        if (Vector3.Distance(agent.transform.position, player.transform.position) <= 2.0f)
         {
             Debug.Log("DRAINING THE PLAYER'S TIME");
 
@@ -79,13 +80,4 @@ public class AIController : MonoBehaviour
             timeController.timeUsed += 1.0f;
         }
     }
-
-/*    private void OnTriggerStay(Collider other)
-    {
-        if (other.CompareTag("Player"))
-        {
-            Debug.Log("TOUCHING THE PLAYER");
-            timeController.timeUsed += 1.0f;
-        }
-    }*/
 }

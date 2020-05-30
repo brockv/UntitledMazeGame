@@ -23,8 +23,10 @@ public class FragmentController : MonoBehaviour
 
     private void Update()
     {
+        // Exit if the game is paused
         if (PauseMenu.isPaused) return;
 
+        // Rotate the fragment
         gameObject.transform.Rotate(rotation * Time.deltaTime);
 
         // Disable the trigger if time is reversing

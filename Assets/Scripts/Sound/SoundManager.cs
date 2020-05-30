@@ -56,7 +56,7 @@ public class SoundManager : MonoBehaviour
 
         // Set the clip, volume, and loop properties, then play it
         source.clip = audioClip;
-        source.volume = trackList[track].maxVolume;
+        source.volume = trackList[track].volume;
         source.loop = true;
         source.Play();
     }
@@ -64,62 +64,42 @@ public class SoundManager : MonoBehaviour
     /**
      * Starts the coroutine that fades a track in.
      */
-    public void SetFadeIn(int track, float speed, float maxVolume)
+    public void SetFadeIn(int track, float volume)
     {
-        instance.StartCoroutine(FadeIn(track, speed, maxVolume));
+        instance.StartCoroutine(FadeIn(track, volume));
     }
 
     /**
      * Starts the coroutine that fades a track out.
      */
-    public void SetFadeOut(int track, float speed)
+    public void SetFadeOut(int track, float volume)
     {
-        instance.StartCoroutine(FadeOut(track, speed));
+        instance.StartCoroutine(FadeOut(track, volume));
     }
 
     /**
      * Fades a track in.
      */
-    private IEnumerator FadeIn(int track, float speed, float maxVolume)
+    private IEnumerator FadeIn(int track, float volume)
     {
-        // Set the fade flags
-        keepFadingIn = true;
-        keepFadingOut = false;
-
-        // Set the volume to zero and store it in a variable
-        trackList[track].audioSource.volume = 0;
-        float audioVolume = trackList[track].audioSource.volume;
-
         // Fade the track in
-        while (trackList[track].audioSource.volume < maxVolume && keepFadingIn)
+        while (trackList[track].audioSource.volume < volume)
         {
-            audioVolume += speed;
-            trackList[track].audioSource.volume = audioVolume;
-            yield return new WaitForSeconds(0.1f);
+            trackList[track].audioSource.volume += (Time.deltaTime / (5 + 1));
+            yield return null;
         }
     }
 
     /**
      * Fades a track out.
      */
-    private IEnumerator FadeOut(int track, float speed)
+    private IEnumerator FadeOut(int track, float volume)
     {
-        // Set the fade flags
-        keepFadingIn = false;
-        keepFadingOut = true;
-
-        // Grab the current volume of the track
-        float audioVolume = trackList[track].maxVolume;
-
         // Fade the track out
-        while (trackList[track].audioSource.volume >= speed && keepFadingOut)
+        while (trackList[track].audioSource.volume > volume)
         {
-            audioVolume -= speed;
-            trackList[track].audioSource.volume = audioVolume;
-            yield return new WaitForSeconds(0.1f);
+            trackList[track].audioSource.volume -= (Time.deltaTime / (5 - 1));
+            yield return null;
         }
-
-        // Stop it once the fade is complete -- prevents some weird audio issues
-        trackList[track].audioSource.Stop();
     }
 }

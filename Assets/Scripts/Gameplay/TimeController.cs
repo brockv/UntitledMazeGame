@@ -113,6 +113,7 @@ public class TimeController : MonoBehaviour
 
     void Update()
     {
+        // Exit if the game is paused
         if (PauseMenu.isPaused) return;
 
         // Rewind time if the left mouse button is being pressed
@@ -141,6 +142,7 @@ public class TimeController : MonoBehaviour
 
     void FixedUpdate()
     {
+        // Exit if the game is paused
         if (PauseMenu.isPaused) return;
 
         // Is time rewinding?
@@ -170,7 +172,7 @@ public class TimeController : MonoBehaviour
             {
                 // Increase the remaining time by subtracting from the time used
                 timeUsed = Mathf.Clamp(timeUsed - Time.deltaTime, 0, 120);
-                timeLeft = Mathf.Clamp((timeLimit - Mathf.RoundToInt(timeUsed)), 0, 120);
+                timeLeft = Mathf.Clamp((timeLimit - Mathf.RoundToInt(timeUsed)), 0, timeLimit);
 
                 // Update the timer label
                 timeLabel.text = timeLeft.ToString();
@@ -209,8 +211,8 @@ public class TimeController : MonoBehaviour
         else
         {
             // Reduce the remaining time by increasing the time used
-            timeUsed = Mathf.Clamp(timeUsed + Time.deltaTime, 0, 80);
-            timeLeft = Mathf.Clamp((timeLimit - (int)timeUsed), 0, 80);
+            timeUsed = Mathf.Clamp(timeUsed + Time.deltaTime, 0, timeLimit);
+            timeLeft = Mathf.Clamp((timeLimit - (int)timeUsed), 0, timeLimit);
 
             // If there is still time remaining, display the updated value
             if (timeLeft > 0)
