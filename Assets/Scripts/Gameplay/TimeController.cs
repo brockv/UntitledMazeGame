@@ -171,7 +171,7 @@ public class TimeController : MonoBehaviour
             if (timeLeft > 0)
             {
                 // Increase the remaining time by subtracting from the time used
-                timeUsed = Mathf.Clamp(timeUsed - Time.deltaTime, 0, 120);
+                timeUsed = Mathf.Clamp(timeUsed - Time.deltaTime, 0, timeLimit);
                 timeLeft = Mathf.Clamp((timeLimit - Mathf.RoundToInt(timeUsed)), 0, timeLimit);
 
                 // Update the timer label
@@ -340,12 +340,12 @@ public class TimeController : MonoBehaviour
             foreach (GameObject go in mazeLoader.fragmentList)
             {
                 Debug.Log(Vector3.Distance(player.transform.position, position));
-                if (Vector3.Distance(player.transform.position, position) <= 5.0f)
+                if (Vector3.Distance(player.transform.position, position) <= 2.5f)
                 //if (Mathf.FloorToInt(player.transform.position.x) == position.x && Mathf.FloorToInt(player.transform.position.z) == position.z)
                 {
                     Debug.Log("PLAYER IS WHERE THEY COLLECTED A FRAGMENT");
                     // If the fragment isn't active, make it active and increase the fragment count
-                    if (!go.activeSelf)
+                    if (!go.activeSelf && Vector3.Distance(player.transform.position, go.transform.position) <= 2.5f)
                     {
                         go.SetActive(true);
                         mazeLoader.fragments++;

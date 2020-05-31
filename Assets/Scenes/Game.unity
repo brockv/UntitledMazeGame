@@ -737,6 +737,11 @@ PrefabInstance:
       propertyPath: Volume
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 114051214696948948, guid: 2e62f5703e5f8d2488a5e1bc8433be41,
+        type: 3}
+      propertyPath: staminaDepletionSpeed
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 136239539305442568, guid: 2e62f5703e5f8d2488a5e1bc8433be41,
         type: 3}
       propertyPath: m_Material
@@ -1216,7 +1221,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   player: {fileID: 1311176471}
   agent: {fileID: 899229208}
-  timeLimit: 120
+  timeLimit: 180
   camera: {fileID: 1207186594}
   timeLabel: {fileID: 285828181}
   mazeLoader: {fileID: 1062459226}

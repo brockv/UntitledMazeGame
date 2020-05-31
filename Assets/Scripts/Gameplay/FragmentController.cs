@@ -1,7 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.SceneManagement;
+﻿using UnityEngine;
 
 public class FragmentController : MonoBehaviour
 {
@@ -34,7 +31,7 @@ public class FragmentController : MonoBehaviour
         else
         {
             gameObject.GetComponent<BoxCollider>().isTrigger = true;            
-        }
+        }     
     }
 
     /**
@@ -62,9 +59,6 @@ public class FragmentController : MonoBehaviour
 
             // Add the location this was collected to the list
             timeController.fragmentList.Add(position);
-
-            // Increase the player's remaining time by subtracting from their time used so far.
-            timeController.timeUsed = Mathf.Clamp(timeController.timeUsed - 10.0f, 0, 80);
         }
     }
 }

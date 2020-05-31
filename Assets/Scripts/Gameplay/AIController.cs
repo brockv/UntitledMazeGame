@@ -72,7 +72,7 @@ public class AIController : MonoBehaviour
     private void DrainPlayersRemainingTime()
     {
         // If the agent is close enough to the player, drain their remaining time
-        if (Vector3.Distance(agent.transform.position, player.transform.position) <= 2.0f)
+        if (Vector3.Distance(agent.transform.position, player.transform.position) <= 2.5f)
         {
             Debug.Log("DRAINING THE PLAYER'S TIME");
 
