@@ -7,7 +7,6 @@ public class FragmentController : MonoBehaviour
 {
     [SerializeField] Vector3 rotation;
 
-    private FirstPersonAIO player;
     private MazeLoader mazeLoader;
     private TimeController timeController;
 
@@ -16,9 +15,6 @@ public class FragmentController : MonoBehaviour
         // Grab the MazeLoader and TimeController from the scene
         mazeLoader = FindObjectOfType(typeof(MazeLoader)) as MazeLoader;
         timeController = FindObjectOfType(typeof(TimeController)) as TimeController;
-
-        // Grab the player from the MazeLoader
-        player = mazeLoader.player;
     }
 
     private void Update()
@@ -41,6 +37,9 @@ public class FragmentController : MonoBehaviour
         }
     }
 
+    /**
+     * "Collect" a fragment when moving over it.
+     */
     private void OnTriggerEnter(Collider other)
     {
         // Exit if time is reversing

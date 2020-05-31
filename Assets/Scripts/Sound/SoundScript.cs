@@ -32,7 +32,7 @@ public class SoundScript : MonoBehaviour
         soundManager.PlayMusic(0, safe);
         soundManager.PlayMusic(1, danger);
 
-        soundManager.SetFadeIn(0, 0.5f);
+        soundManager.SetFadeIn(0, 0.25f);
     }
 
     private void Update()
@@ -60,7 +60,7 @@ public class SoundScript : MonoBehaviour
             inDangerZone = true;
 
             // Fade in the chase music
-            soundManager.SetFadeIn(1, 0.5f);
+            soundManager.SetFadeIn(1, 0.25f);
         }
     }
 }
