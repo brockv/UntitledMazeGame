@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Rendering.PostProcessing;
@@ -97,7 +95,6 @@ public class TimeController : MonoBehaviour
         fragmentList = new List<Vector3>();
 
         // Initialize timer variables
-        //timeLimit = 80;
         timeUsed = 0;
         rewindTime = 0;
 
@@ -116,7 +113,7 @@ public class TimeController : MonoBehaviour
         // Exit if the game is paused
         if (PauseMenu.isPaused) return;
 
-        // Rewind time if the left mouse button is being pressed
+        // Rewind time if the player presses the 'R' key
         if (rewindTime > 1.0f)
         {
             if (Input.GetKeyDown(KeyCode.R))
@@ -339,11 +336,9 @@ public class TimeController : MonoBehaviour
         {
             foreach (GameObject go in mazeLoader.fragmentList)
             {
-                Debug.Log(Vector3.Distance(player.transform.position, position));
+                // If the player is very close to one of the recorded fragment pick-up positions, continue
                 if (Vector3.Distance(player.transform.position, position) <= 2.5f)
-                //if (Mathf.FloorToInt(player.transform.position.x) == position.x && Mathf.FloorToInt(player.transform.position.z) == position.z)
                 {
-                    Debug.Log("PLAYER IS WHERE THEY COLLECTED A FRAGMENT");
                     // If the fragment isn't active, make it active and increase the fragment count
                     if (!go.activeSelf && Vector3.Distance(player.transform.position, go.transform.position) <= 2.5f)
                     {
@@ -404,18 +399,22 @@ public class TimeController : MonoBehaviour
             playerCurrentStamina = (float)playerStamina[playerLastIndex];
             playerPreviousStamina = (float)playerStamina[playerSecondToLastIndex];
 
+            // Remove the last recorded position
             playerKeyFrames.RemoveAt(playerLastIndex);                   
         }
 
         // Get the agent's current and previous position and location
         if (agentSecondToLastIndex >= 0)
         {
+            // Position
             agentCurrentPosition = (agentKeyFrames[agentLastIndex] as FrameData).position;
             agentPreviousPosition = (agentKeyFrames[agentSecondToLastIndex] as FrameData).position;
 
+            // Rotation
             agentCurrentRotation = (agentKeyFrames[agentLastIndex] as FrameData).rotation;
             agentPreviousRotation = (agentKeyFrames[agentSecondToLastIndex] as FrameData).rotation;
 
+            // Remove the last recorded position
             agentKeyFrames.RemoveAt(agentLastIndex);
         }
     }
@@ -456,7 +455,7 @@ public class TimeController : MonoBehaviour
                 mazeLoader.mazeCells[r, c].visited = true;
                 string sectionTag = GetSectionTag(r, c);
 
-                // If there's a north wall in this cell, create one in the copy
+                // If there's a north wall in this cell of the copy, create one in the main maze
                 if (temp[r, c].northWall != null)
                 {
                     mazeLoader.mazeCells[r, c].northWall = Instantiate(wall, new Vector3((r * size) - (size / 2f), 0, c * size), Quaternion.identity) as GameObject;
@@ -468,7 +467,7 @@ public class TimeController : MonoBehaviour
                     temp[r, c].northWall = null;
                 }
 
-                // If there's a south wall in this cell, create one in the copy
+                // If there's a south wall in this cell of the copy, create one in the main maze
                 if (temp[r, c].southWall != null)
                 {
                     mazeLoader.mazeCells[r, c].southWall = Instantiate(wall, new Vector3((r * size) + (size / 2f), 0, c * size), Quaternion.identity) as GameObject;
@@ -480,7 +479,7 @@ public class TimeController : MonoBehaviour
                     temp[r, c].southWall = null;
                 }
 
-                // If there's a east wall in this cell, create one in the copy
+                // If there's a east wall in this cell of the copy, create one in the main maze
                 if (temp[r, c].eastWall != null)
                 {
                     mazeLoader.mazeCells[r, c].eastWall = Instantiate(wall, new Vector3(r * size, 0, (c * size) + (size / 2f)), Quaternion.identity) as GameObject;
@@ -491,7 +490,7 @@ public class TimeController : MonoBehaviour
                     temp[r, c].eastWall = null;
                 }
 
-                // If there's a west wall in this cell, create one in the copy
+                // If there's a west wall in this cell of the copy, create one in the main maze
                 if (temp[r, c].westWall != null)
                 {
                     mazeLoader.mazeCells[r, c].westWall = Instantiate(wall, new Vector3(r * size, 0, (c * size) - (size / 2f)), Quaternion.identity) as GameObject;

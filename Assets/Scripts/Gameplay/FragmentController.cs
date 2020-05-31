@@ -45,19 +45,15 @@ public class FragmentController : MonoBehaviour
         // Check if the player is what collided with the fragment
         if (other.CompareTag("Player"))
         {
-            Vector3 fragmentPosition = gameObject.transform.position;
-            fragmentPosition = new Vector3(fragmentPosition.x, other.transform.position.y, fragmentPosition.z);
-            Debug.Log(fragmentPosition);
-
+            // Grab the player's position on pick-up
             Vector3 position = other.transform.position;
-            Debug.Log(position);
             position = new Vector3(Mathf.FloorToInt(position.x), position.y, Mathf.FloorToInt(position.z));
 
             // Deactivate the fragment and decrease the fragment counter
             gameObject.SetActive(false);
             mazeLoader.fragments--;
 
-            // Add the location this was collected to the list
+            // Add the location this was collected at to the list
             timeController.fragmentList.Add(position);
         }
     }

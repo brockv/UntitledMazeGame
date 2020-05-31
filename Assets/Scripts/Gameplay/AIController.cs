@@ -1,7 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.AI;
 using UnityStandardAssets.Characters.ThirdPerson;
 
@@ -12,8 +9,6 @@ public class AIController : MonoBehaviour
     [SerializeField] private ThirdPersonCharacter character;
 
     private TimeController timeController;
-    private LineRenderer lineRenderer;
-    private List<Vector3> points;
 
     private void Start()
     {
@@ -23,9 +18,8 @@ public class AIController : MonoBehaviour
 
         // Disable rotation -- the ThirdPersonCharacter script will handle it
         agent.updateRotation = false;
-
-        //lineRenderer = GetComponent<LineRenderer>();
     }
+
     void Update()
     {
         // Exit if the game is paused
@@ -43,9 +37,6 @@ public class AIController : MonoBehaviour
                 // Drain the player's remaining time
                 DrainPlayersRemainingTime();
             }
-
-            //lineRenderer.positionCount = agent.path.corners.Length;
-            //lineRenderer.SetPositions(agent.path.corners);
         }
     }
 
@@ -69,13 +60,14 @@ public class AIController : MonoBehaviour
         }
     }
 
+    /**
+     * Drains the player's remaining time if the agent gets close enough
+     */
     private void DrainPlayersRemainingTime()
     {
         // If the agent is close enough to the player, drain their remaining time
         if (Vector3.Distance(agent.transform.position, player.transform.position) <= 2.5f)
         {
-            Debug.Log("DRAINING THE PLAYER'S TIME");
-
             // Adding to the time used decreases the time the player has left
             timeController.timeUsed += 1.0f;
         }

@@ -4,7 +4,7 @@ using UnityEngine.SceneManagement;
 public class MainMenu : MonoBehaviour
 {
     /**
-     * Starts the game from the main menu by loading the next scene.
+     * Starts the game.
      */
     public void StartGame()
     {
@@ -14,7 +14,7 @@ public class MainMenu : MonoBehaviour
     }
 
     /**
-     * Exits the game from the main menu.
+     * Exits the game.
      */
     public void QuitGame()
     {

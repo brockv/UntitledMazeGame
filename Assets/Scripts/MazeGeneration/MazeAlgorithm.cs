@@ -1,6 +1,6 @@
-﻿using UnityEngine;
-using System.Collections;
-using UnityEngine.AI;
+﻿/**
+ * Adapted from Richard Hawkes' tutorial found here: https://www.youtube.com/watch?v=IrO4mswO2o4
+ */
 
 public abstract class MazeAlgorithm
 {

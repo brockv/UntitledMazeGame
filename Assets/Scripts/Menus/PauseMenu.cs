@@ -10,15 +10,17 @@ public class PauseMenu : MonoBehaviour
 
     public static bool isPaused = false;
 
-    // Update is called once per frame
     void Update()
     {
+        // Check if the 'Escape' key has been pressed
         if (Input.GetKeyDown(KeyCode.Escape))
         {
+            // Unpause the game if it was already paused
             if (isPaused)
             {
                 ResumeGame();
             }
+            // Otherwise, pause it
             else
             {
                 PauseGame();
@@ -26,8 +28,12 @@ public class PauseMenu : MonoBehaviour
         }
     }
 
+    /**
+     * Pauses the game.
+     */
     private void PauseGame()
     {
+        // Activate the pause menu, set the time scale to 0, and set the pause flag to true
         pauseMenuUI.SetActive(true);
         Time.timeScale = 0.0f;
         isPaused = true;
@@ -37,8 +43,12 @@ public class PauseMenu : MonoBehaviour
         Cursor.visible = true;
     }
 
+    /**
+     * Unpauses the game.
+     */
     public void ResumeGame()
     {
+        // Deactivate the pause menu, set the time scale back to 1, and set the pause flag to false
         pauseMenuUI.SetActive(false);
         Time.timeScale = 1.0f;
         isPaused = false;
@@ -48,8 +58,12 @@ public class PauseMenu : MonoBehaviour
         Cursor.visible = false;
     }
 
+    /**
+     * Returns to the main menu.
+     */
     public void ReturnToMenu()
     {
+        // Set the time scale back to 1 and set the pause flag to false
         Time.timeScale = 1.0f;
         isPaused = false;
 
@@ -58,11 +72,10 @@ public class PauseMenu : MonoBehaviour
     }
 
     /**
-     * Exits the game from the main menu.
+     * Exits the game.
      */
     public void QuitGame()
     {
-        Debug.Log("QUIT!");
         Application.Quit();
     }
 }

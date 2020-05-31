@@ -1,5 +1,8 @@
-﻿using UnityEngine;
-using System.Collections;
+﻿/**
+ * Adapted from Richard Hawkes' tutorial found here: https://www.youtube.com/watch?v=IrO4mswO2o4
+ */
+
+using UnityEngine;
 
 public class ProceduralNumberGenerator
 {

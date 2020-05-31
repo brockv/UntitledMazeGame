@@ -1,10 +1,10 @@
-﻿using UnityEngine;
+﻿/**
+ * Adapted from Richard Hawkes' tutorial found here: https://www.youtube.com/watch?v=IrO4mswO2o4
+ */
+
+using UnityEngine;
 using UnityEngine.AI;
-using System.Collections;
-using System;
 using UnityEngine.UI;
-using System.Net;
-using System.Reflection.Emit;
 using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 
@@ -228,8 +228,8 @@ public class MazeLoader : MonoBehaviour {
 				// Section One
 				case 1:
 					// Get a random cell in section one
-					row = UnityEngine.Random.Range(2, 5);
-					col = UnityEngine.Random.Range(2, 8);
+					row = Random.Range(2, 5);
+					col = Random.Range(2, 8);
 					position = mazeCells[row, col].floor.transform.position;
 
 					// Create a fragment at the given position
@@ -245,8 +245,8 @@ public class MazeLoader : MonoBehaviour {
 				// Section Two
 				case 2:
 					// Get a random cell in section two
-					row = UnityEngine.Random.Range(2, 5);
-					col = UnityEngine.Random.Range(11, 17);
+					row = Random.Range(2, 5);
+					col = Random.Range(11, 17);
 					position = mazeCells[row, col].floor.transform.position;
 
 					// Create a fragment at the given position
@@ -262,8 +262,8 @@ public class MazeLoader : MonoBehaviour {
 				// Section Three
 				case 3:
 					// Get a random cell in section three
-					row = UnityEngine.Random.Range(8, 11);
-					col = UnityEngine.Random.Range(2, 8);
+					row = Random.Range(8, 11);
+					col = Random.Range(2, 8);
 					position = mazeCells[row, col].floor.transform.position;
 
 					// Create a fragment at the given position
@@ -279,8 +279,8 @@ public class MazeLoader : MonoBehaviour {
 				// Section Four
 				case 4:
 					// Get a random cell in section four
-					row = UnityEngine.Random.Range(8, 11);
-					col = UnityEngine.Random.Range(11, 17);
+					row = Random.Range(8, 11);
+					col = Random.Range(11, 17);
 					position = mazeCells[row, col].floor.transform.position;
 
 					// Create a fragment at the given position
@@ -331,7 +331,7 @@ public class MazeLoader : MonoBehaviour {
 				// East walls
 				if ((tag == "SectionOne" || tag == "SectionThree") && c == (stopCol - 1))
 				{
-					if (UnityEngine.Random.value > 0.5f)
+					if (Random.value > 0.5f)
 					{
 						mazeCells[r, c].eastWall = Instantiate(wall, new Vector3(r * size, 0, (c * size) + (size / 2f)), Quaternion.identity) as GameObject;
 						mazeCells[r, c].eastWall.name = "East Wall " + r + "," + c;
@@ -357,7 +357,7 @@ public class MazeLoader : MonoBehaviour {
 				// South walls
 				if ((tag == "SectionOne" || tag == "SectionTwo") && r == (stopRow - 1))
 				{
-					if (UnityEngine.Random.value > 0.5f)
+					if (Random.value > 0.5f)
 					{
 						mazeCells[r, c].southWall = Instantiate(wall, new Vector3((r * size) + (size / 2f), 0, c * size), Quaternion.identity) as GameObject;
 						mazeCells[r, c].southWall.name = "South Wall " + r + "," + c;

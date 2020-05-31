@@ -1,4 +1,8 @@
-﻿using UnityEngine;
+﻿/**
+ * Adapted from Richard Hawkes' tutorial found here: https://www.youtube.com/watch?v=IrO4mswO2o4
+ */
+
+using UnityEngine;
 
 /**
  * Class that makes up an individual cell in the maze.

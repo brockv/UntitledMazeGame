@@ -30,7 +30,7 @@ public class ShowFragments : MonoBehaviour
     }
 
     /**
-     * Shows the outlines of the fragments through the walls
+     * Shows the outlines of the fragments through the walls.
      */
      private void ShowFragmentOutlines()
      {
@@ -61,6 +61,9 @@ public class ShowFragments : MonoBehaviour
         }        
      }
 
+    /**
+     * "Hides" the fragments by setting their default shader.
+     */
     private void HideFragmentOutlines()
     {
         // Iterate over each fragment and set the default shader
