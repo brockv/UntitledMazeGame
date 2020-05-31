@@ -21,8 +21,8 @@ public class SoundScript : MonoBehaviour
     {
         // Add the tracks and initialize their settings
         soundManager.AddTracks(2, gameObject);
-        soundManager.TrackSettings(0, mainMix, "Safe", 0.0f, 1.0f, true);
-        soundManager.TrackSettings(1, mainMix, "Danger", 0.0f, 1.0f, true);
+        soundManager.TrackSettings(0, mainMix, "Safe", 0.0f, 0.25f, true);
+        soundManager.TrackSettings(1, mainMix, "Danger", 0.0f, 0.25f, true);
 
         // Fade in and start playing the regular music
         soundManager.PlayMusic(0, safe);

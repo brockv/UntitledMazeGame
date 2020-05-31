@@ -25,7 +25,7 @@ public class FadeIn : MonoBehaviour {
     {
 
         //Controls Volume "0" is the lowest and " 1 " is the max. These values are FLOATS
-        if (aud.volume < 0.5f)
+        if (aud.volume < 0.25f)
         {
             aud.volume += Time.deltaTime / (approxSecondsToFadeIn + 1);
         }
