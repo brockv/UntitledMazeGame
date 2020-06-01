@@ -1221,7 +1221,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   player: {fileID: 1311176471}
   agent: {fileID: 899229208}
-  timeLimit: 180
+  timeLimit: 210
   camera: {fileID: 1207186594}
   timeLabel: {fileID: 285828181}
   mazeLoader: {fileID: 1062459226}
