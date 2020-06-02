@@ -3775,6 +3775,11 @@ PrefabInstance:
       propertyPath: m_MoveSpeedMultiplier
       value: 0.5
       objectReference: {fileID: 0}
+    - target: {fileID: 8334634799448222779, guid: 24a16ae1cdc113a4fbe8be04672f1592,
+        type: 3}
+      propertyPath: m_AnimSpeedMultiplier
+      value: 0.5
+      objectReference: {fileID: 0}
     - target: {fileID: 8801777222642263751, guid: 24a16ae1cdc113a4fbe8be04672f1592,
         type: 3}
       propertyPath: m_RootOrder
