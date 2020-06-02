@@ -141,8 +141,14 @@ public class MazeLoader : MonoBehaviour {
 		// Update the fragment counter text
 		fragmentCounter.text = fragments.ToString();
 
+		// If the player collected all the fragments, they've "won"
 		if (fragments == 0)
 		{
+			// Unlock the cursor and make it visible again
+			Cursor.lockState = CursorLockMode.None;
+			Cursor.visible = true;
+
+			// Load the Success scene
 			SceneManager.UnloadSceneAsync("Game");
 			SceneManager.LoadSceneAsync("SuccessMenu");
 		}
